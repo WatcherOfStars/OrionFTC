@@ -13,7 +13,7 @@ import static org.firstinspires.ftc.teamcode.Orion.NavModules.Roadrunner.drive.D
 import static org.firstinspires.ftc.teamcode.Orion.NavModules.Roadrunner.drive.DriveConstants.MAX_ANG_VEL_MOD;
 import static org.firstinspires.ftc.teamcode.Orion.NavModules.Roadrunner.drive.DriveConstants.MAX_VEL_MOD;
 
-@TeleOp(name = "*TEST CURIOSITY TELEOP*", group = "Curiosity")
+@TeleOp(name = "TEST Curiosity TeleOp", group = "Curiosity")
 @Config
 public class CuriosityTESTTeleop extends OpMode implements ControllerInputListener
 {
@@ -99,18 +99,18 @@ public class CuriosityTESTTeleop extends OpMode implements ControllerInputListen
         if(control.navigation.IsThreadRunning()) return;
 
         if(control.navigation.side == FreightFrenzyNavigation.AllianceSide.BLUE){
-            telemetry.addData("Alliance Side", "BLUE");
+            //telemetry.addData("Alliance Side", "BLUE");
             control.blinkinController.Blue();
         }
         else {
-            telemetry.addData("Alliance Side", "RED");
+            //telemetry.addData("Alliance Side", "RED");
             control.blinkinController.Red();
         }
 
         control.Update();
         control.TurretArm().UpdateIntakeTiered();
 
-        control.navigation.PrintSensorTelemetry();
+        //control.navigation.PrintSensorTelemetry();
 
         //Manage driving
         control.SetHeadingPID(turnP, turnI, turnD);
@@ -122,7 +122,7 @@ public class CuriosityTESTTeleop extends OpMode implements ControllerInputListen
             //control.GetOrion().PrintTensorflowTelemetry();
         }
 
-        telemetry.update();
+        //telemetry.update();
     }
 
     @Override
@@ -157,7 +157,7 @@ public class CuriosityTESTTeleop extends OpMode implements ControllerInputListen
         if(controllerNumber==2)
         {
             try {
-                control.navigation.GoToHub();
+                control.navigation.TurnToHubLinear();
             } catch (InterruptedException e) {
 
             }

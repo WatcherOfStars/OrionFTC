@@ -2,17 +2,13 @@ package org.firstinspires.ftc.teamcode._RobotCode.Curiosity;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
-import org.firstinspires.ftc.teamcode.Orion.NavModules.Camera;
 import org.firstinspires.ftc.teamcode.Orion.NavModules.FreightFrenzy.FreightFrenzyNavigation;
-import org.firstinspires.ftc.teamcode.Orion.NavModules.Roadrunner.RoadrunnerModule;
 
 @Autonomous(name = "TEST Curiosity Auto", group = "Curiosity")
 @Config
-@Disabled
+//@Disabled
 public class CuriosityTESTAutonomous extends LinearOpMode
 {
     CuriosityRobot robot;
@@ -20,7 +16,7 @@ public class CuriosityTESTAutonomous extends LinearOpMode
     public static double targetHeading = -90;
     public static double targetHeading2 = -200;
     private double multiplier = 1;
-    protected FreightFrenzyNavigation.AllianceSide side = FreightFrenzyNavigation.AllianceSide.RED;
+    protected FreightFrenzyNavigation.AllianceSide side = FreightFrenzyNavigation.AllianceSide.BLUE;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -34,15 +30,9 @@ public class CuriosityTESTAutonomous extends LinearOpMode
 
         multiplier = -nav.GetSideMultiplier();
 
-        while (!isStopRequested()){
-            telemetry.update();
-            nav.Wait(1);
-        }
 
 
-//        FreightFrenzyNavigation.DuckPos pos = nav.ScanBarcodeOpenCV(); //TODO: get working
-//        telemetry.update();
-//        nav.Wait(10);
+        nav.TurnToHubLinear();
 
 
 

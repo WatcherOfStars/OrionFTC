@@ -27,7 +27,7 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
  * THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.firstinspires.ftc.teamcode._RobotCode.Curiosity;
+package org.firstinspires.ftc.teamcode.Core.MechanicalControlToolkit;
 
 import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
@@ -47,6 +47,8 @@ public class BlinkinController
 
     Telemetry.Item display;
     DisplayKind displayKind;
+
+    double cooldownTime = 0;
 
     protected enum DisplayKind {
         MANUAL,
@@ -72,22 +74,31 @@ public class BlinkinController
         blinkinLedDriver.setPattern(pattern);
     }
 
+    public void SetCooldown(double seconds){cooldownTime = opMode.getRuntime()+seconds;}
+    boolean IsCooldownUp(){return cooldownTime<opMode.getRuntime();}
+
     public void Blue(){
+        if(!IsCooldownUp()) return;
         blinkinLedDriver.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
     }
     public void Red(){
+        if(!IsCooldownUp()) return;
         blinkinLedDriver.setPattern(RevBlinkinLedDriver.BlinkinPattern.RED);
     }
     public void Green(){
+        if(!IsCooldownUp()) return;
         blinkinLedDriver.setPattern(RevBlinkinLedDriver.BlinkinPattern.GREEN);
     }
     public void Lime(){
+        if(!IsCooldownUp()) return;
         blinkinLedDriver.setPattern(RevBlinkinLedDriver.BlinkinPattern.LIME);
     }
     public void Yellow(){
+        if(!IsCooldownUp()) return;
         blinkinLedDriver.setPattern(RevBlinkinLedDriver.BlinkinPattern.YELLOW);
     }
     public void Purple(){
+        if(!IsCooldownUp()) return;
         blinkinLedDriver.setPattern(RevBlinkinLedDriver.BlinkinPattern.VIOLET);
     }
 }

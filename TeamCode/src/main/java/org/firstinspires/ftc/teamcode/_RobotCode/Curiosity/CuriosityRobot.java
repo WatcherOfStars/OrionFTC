@@ -13,6 +13,7 @@ import com.qualcomm.robotcore.hardware.TouchSensor;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.Core.HermesLog.HermesLog;
 import org.firstinspires.ftc.teamcode.Core.MechanicalControlToolkit.Attachments.EncoderActuator;
+import org.firstinspires.ftc.teamcode.Core.MechanicalControlToolkit.BlinkinController;
 import org.firstinspires.ftc.teamcode.Core.MechanicalControlToolkit.Chassis.MecanumChassis;
 import org.firstinspires.ftc.teamcode.Orion.NavModules.FreightFrenzy.FreightFrenzyNavigation;
 
@@ -79,21 +80,21 @@ public class CuriosityRobot extends MecanumChassis
 
             TouchSensor armTouch = opMode.hardwareMap.get(TouchSensor.class, "armTouch");
 
-            turretArm = new CuriosityTurretArm(opMode, new _ArmProfile(armMotor), new _TurretProfile(turretMotor), spinnerServo, intakeDist, armResetDist,armTouch,false);
+            blinkinController = new BlinkinController(opMode);
+
+            turretArm = new CuriosityTurretArm(opMode, blinkinController, new _ArmProfile(armMotor), new _TurretProfile(turretMotor), spinnerServo, intakeDist, armResetDist,armTouch,false);
             turretArm.Arm().ResetToZero();
-            turretArm.SetThread(new Thread(turretArm));
 
             duckSpinner = new DuckSpinner(duckMotor, 1);
 
             //tapeMeasureCapper = new EncoderActuator(opMode,new _TapeMeasureProfile(tapeMotor));
-            blinkinController = new BlinkinController(opMode);
         }
 
         if(useNavigator){
             DistanceSensor portDist = opMode.hardwareMap.get(DistanceSensor.class, "portDist");
             DistanceSensor starboardDist = opMode.hardwareMap.get(DistanceSensor.class, "starboardDist");
             ColorSensor colorSensor = opMode.hardwareMap.colorSensor.get("colorSensor");
-            navigation = new CuriosityNavigator(opMode, this, turretArm, duckSpinner, duckDist, intakeDist, portDist, starboardDist, colorSensor, blinkinController, FreightFrenzyNavigation.AllianceSide.BLUE);
+            navigation = new FreightFrenzyNavigation(opMode, this, turretArm, duckSpinner, duckDist, intakeDist, armResetDist, portDist, starboardDist, colorSensor, blinkinController, FreightFrenzyNavigation.AllianceSide.BLUE);
             navigation.SetThread(new Thread(navigation));
         }
     }
@@ -118,7 +119,8 @@ public class CuriosityRobot extends MecanumChassis
 
     public void Update(){
         text.Update();
-        if(USE_NAVIGATOR){
+        if(USE_PAYLOAD){
+            turretArm.UpdateIntakeTiered();
         }
     }
 
