@@ -9,7 +9,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.Core.MechanicalControlToolkit.Basic.IMU;
 import org.firstinspires.ftc.teamcode.Core.MechanicalControlToolkit.Basic.MotorArray;
-import org.firstinspires.ftc.teamcode.Core.PIDController;
+import org.firstinspires.ftc.teamcode.Core.MechanicalControlToolkit.Basic.PIDController;
 
 public class TankChassis
 {
