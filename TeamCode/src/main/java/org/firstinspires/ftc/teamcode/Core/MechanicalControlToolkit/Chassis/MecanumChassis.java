@@ -5,8 +5,9 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 import org.firstinspires.ftc.teamcode.Core.InputSystem.ControllerInput;
+import org.firstinspires.ftc.teamcode.Core.MechanicalControlToolkit.Basic.BaseRobot;
 import org.firstinspires.ftc.teamcode.Core.MechanicalControlToolkit.Basic.MotorArray;
-import org.firstinspires.ftc.teamcode.Core.PIDController;
+import org.firstinspires.ftc.teamcode.Core.MechanicalControlToolkit.Basic.PIDController;
 import org.firstinspires.ftc.teamcode.Core.HermesLog.HermesLog;
 import org.firstinspires.ftc.teamcode.Core.MechanicalControlToolkit.Basic.IMU;
 
@@ -15,6 +16,7 @@ public class MecanumChassis
 {
     ////Dependencies////
     protected IMU imu;
+    private BaseRobot baseRobot;
     public HermesLog log;
     private PIDController headingPIDController;
     private PIDController speedPID;
@@ -51,12 +53,13 @@ public class MecanumChassis
 
 
     //Initializer
-    public MecanumChassis(OpMode setOpMode, ChassisProfile setProfile, HermesLog setLog, boolean useChassis, boolean usePayload, boolean useNavigator)
+    public MecanumChassis(OpMode setOpMode, ChassisProfile setProfile, HermesLog setLog, BaseRobot setBaseRobot)
     {
         opMode = setOpMode;
-        USE_CHASSIS = useChassis;
-        USE_PAYLOAD = usePayload;
-        USE_NAVIGATOR = useNavigator;
+        baseRobot = setBaseRobot;
+        USE_CHASSIS = baseRobot.USE_CHASSIS;
+        USE_PAYLOAD = baseRobot.USE_PAYLOAD;
+        USE_NAVIGATOR = baseRobot.USE_NAVIGATOR;
         log = setLog;
         profile = setProfile;
 

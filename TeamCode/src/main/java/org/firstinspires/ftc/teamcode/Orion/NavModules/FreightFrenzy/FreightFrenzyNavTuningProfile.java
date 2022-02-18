@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 
 import org.firstinspires.ftc.teamcode.Core.MechanicalControlToolkit.Attachments.UniversalTurretIntakeArm;
-import org.firstinspires.ftc.teamcode._RobotCode.Curiosity.DuckSpinner;
+import org.firstinspires.ftc.teamcode._RobotCode.Archived.Curiosity.DuckSpinner;
 
 public interface FreightFrenzyNavTuningProfile
 {
