@@ -35,7 +35,7 @@ public class ErasmusTeleop extends OpMode implements ControllerInputListener
 
     @Override
     public void init() {
-        robot = new ErasmusRobot(this, true, true, true);
+        robot = new ErasmusRobot(this, true, true, false);
         robot.Init();
 
         controllerInput1 = new ControllerInput(gamepad1, 1);
@@ -77,19 +77,19 @@ public class ErasmusTeleop extends OpMode implements ControllerInputListener
         //KILL SWITCH FOR NAVIGATOR
         if(gamepad1.right_trigger > 0.1 && gamepad1.left_trigger > 0.1) {
             //robot.navigation.StopNavigator();
-            robot.TurretArm().StopArmThread();
-            robot.blinkinController.Lime();
+            if(robot.USE_PAYLOAD) robot.TurretArm().StopArmThread();
+            if(robot.USE_PAYLOAD) robot.blinkinController.Lime();
         }
 
         //if(robot.navigation.IsThreadRunning()) return;
 
-        if(robot.currentSide == BaseRobot.FieldSide.BLUE){
+        if(robot.fieldSide == BaseRobot.FieldSide.BLUE){
             telemetry.addData("Alliance Side", "BLUE");
-            robot.blinkinController.Blue();
+            if(robot.USE_PAYLOAD) robot.blinkinController.Blue();
         }
         else {
             telemetry.addData("Alliance Side", "RED");
-            robot.blinkinController.Red();
+            if(robot.USE_PAYLOAD) robot.blinkinController.Red();
         }
 
         robot.Update();
@@ -139,7 +139,7 @@ public class ErasmusTeleop extends OpMode implements ControllerInputListener
     @Override
     public void XPressed(double controllerNumber) {
         if(controllerNumber == payloadControllerNumber && robot.USE_PAYLOAD){
-            robot.TurretArm().ResetArmAndIntake();
+            robot.TurretArm().ReturnToHomeAndIntake(); //TODO: revert to resetAndIntake()
         }
     }
 
@@ -267,16 +267,18 @@ public class ErasmusTeleop extends OpMode implements ControllerInputListener
 
     @Override
     public void DUpPressed(double controllerNumber) {
-
-        robot.TurretArm().AutoIntakeTierUp();
-        robot.TurretArm().GoToAutoTier();
+        if(robot.USE_PAYLOAD) {
+            robot.TurretArm().AutoIntakeTierUp();
+            robot.TurretArm().GoToAutoTier();
+        }
     }
 
     @Override
     public void DDownPressed(double controllerNumber) {
-
-        robot.TurretArm().AutoIntakeTierDown();
-        robot.TurretArm().GoToAutoTier();
+        if(robot.USE_PAYLOAD) {
+            robot.TurretArm().AutoIntakeTierDown();
+            robot.TurretArm().GoToAutoTier();
+        }
     }
 
     @Override

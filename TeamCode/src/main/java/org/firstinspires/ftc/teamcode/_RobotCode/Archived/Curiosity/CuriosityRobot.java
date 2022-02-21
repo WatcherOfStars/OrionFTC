@@ -17,7 +17,7 @@ import org.firstinspires.ftc.teamcode.Core.MechanicalControlToolkit.Attachments.
 import org.firstinspires.ftc.teamcode.Core.MechanicalControlToolkit.Extras.BlinkinController;
 import org.firstinspires.ftc.teamcode.Core.MechanicalControlToolkit.Chassis.MecanumChassis;
 import org.firstinspires.ftc.teamcode.Orion.FieldState.Pose;
-import org.firstinspires.ftc.teamcode.Orion.NavModules.FreightFrenzy.FreightFrenzyNavigation;
+import org.firstinspires.ftc.teamcode.Orion.NavModules.FreightFrenzy.FreightFrenzyNavigation_old;
 
 /**
  * Control class for the Belinda Robot. Controls payload.
@@ -46,7 +46,7 @@ public class CuriosityRobot extends MecanumChassis
 
 
     //Nav Modules
-    FreightFrenzyNavigation navigation;
+    FreightFrenzyNavigation_old navigation;
 
     public boolean isBlue = true;
 
@@ -96,7 +96,7 @@ public class CuriosityRobot extends MecanumChassis
             DistanceSensor portDist = opMode.hardwareMap.get(DistanceSensor.class, "portDist");
             DistanceSensor starboardDist = opMode.hardwareMap.get(DistanceSensor.class, "starboardDist");
             ColorSensor colorSensor = opMode.hardwareMap.colorSensor.get("colorSensor");
-            navigation = new FreightFrenzyNavigation(opMode, this, turretArm, duckSpinner, duckDist, intakeDist, armResetDist, portDist, starboardDist, colorSensor, blinkinController, FreightFrenzyNavigation.AllianceSide.BLUE);
+            navigation = new FreightFrenzyNavigation_old(opMode, this, turretArm, duckSpinner, duckDist, intakeDist, armResetDist, portDist, starboardDist, colorSensor, blinkinController, FreightFrenzyNavigation_old.AllianceSide.BLUE);
             navigation.SetThread(new Thread(navigation));
         }
     }
@@ -136,7 +136,7 @@ public class CuriosityRobot extends MecanumChassis
 
     public DuckSpinner GetDuckSpinner(){return duckSpinner;}
 
-    public FreightFrenzyNavigation Navigation(){return navigation;}
+    public FreightFrenzyNavigation_old Navigation(){return navigation;}
 
     public BlinkinController Lights(){return blinkinController;}
 

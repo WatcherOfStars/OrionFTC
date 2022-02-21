@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
-import org.firstinspires.ftc.teamcode.Orion.NavModules.FreightFrenzy.FreightFrenzyNavigation;
+import org.firstinspires.ftc.teamcode.Orion.NavModules.FreightFrenzy.FreightFrenzyNavigation_old;
 
 @Autonomous(name = "Curiosity Auto Sketchpad", group = "Curiosity")
 @Config
@@ -14,8 +14,8 @@ import org.firstinspires.ftc.teamcode.Orion.NavModules.FreightFrenzy.FreightFren
 public class CuriosityAutonomousSketchpad extends LinearOpMode
 {
    CuriosityRobot robot;
-   FreightFrenzyNavigation nav;
-   protected FreightFrenzyNavigation.AllianceSide side = FreightFrenzyNavigation.AllianceSide.RED;
+   FreightFrenzyNavigation_old nav;
+   protected FreightFrenzyNavigation_old.AllianceSide side = FreightFrenzyNavigation_old.AllianceSide.RED;
 
    @Override
    public void runOpMode() throws InterruptedException {

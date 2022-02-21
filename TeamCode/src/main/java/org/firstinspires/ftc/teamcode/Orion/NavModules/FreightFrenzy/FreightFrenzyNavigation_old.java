@@ -20,7 +20,7 @@ import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 
 @Config
-public class FreightFrenzyNavigation implements Runnable
+public class FreightFrenzyNavigation_old implements Runnable
 {
     //relevant sensors and controllers
     private OpMode opMode;
@@ -113,7 +113,7 @@ public class FreightFrenzyNavigation implements Runnable
     boolean threadRunning = false;
 
 
-    public FreightFrenzyNavigation(OpMode setOpMode, MecanumChassis setChassis, UniversalTurretIntakeArm setArm, DuckSpinner setSpinner, DistanceSensor setDuckDist, DistanceSensor setIntakeDist, DistanceSensor setLevelSensor, DistanceSensor setPortDist, DistanceSensor setStarboardDist, ColorSensor setColorSensor, BlinkinController setBlinkin, AllianceSide setSide){
+    public FreightFrenzyNavigation_old(OpMode setOpMode, MecanumChassis setChassis, UniversalTurretIntakeArm setArm, DuckSpinner setSpinner, DistanceSensor setDuckDist, DistanceSensor setIntakeDist, DistanceSensor setLevelSensor, DistanceSensor setPortDist, DistanceSensor setStarboardDist, ColorSensor setColorSensor, BlinkinController setBlinkin, AllianceSide setSide){
         opMode = setOpMode;
         chassis=setChassis;
         arm = setArm;

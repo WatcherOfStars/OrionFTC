@@ -7,7 +7,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.Core.InputSystem.ControllerInput;
 import org.firstinspires.ftc.teamcode.Core.InputSystem.ControllerInputListener;
-import org.firstinspires.ftc.teamcode.Orion.NavModules.FreightFrenzy.FreightFrenzyNavigation;
+import org.firstinspires.ftc.teamcode.Orion.NavModules.FreightFrenzy.FreightFrenzyNavigation_old;
 
 
 @TeleOp(name = "*CURIOSITY TELEOP*", group = "Curiosity")
@@ -73,8 +73,8 @@ public class CuriosityTeleop extends OpMode implements ControllerInputListener
         control.Start();
         control.ResetGyro();
         //control.GetImu().OffsetGyro(-90);//apply offset to robot's gyro at start of match
-        if(control.navigation.side == FreightFrenzyNavigation.AllianceSide.BLUE) control.SetInputOffset(90); //90 is blue, -90 is red
-        else if(control.navigation.side == FreightFrenzyNavigation.AllianceSide.RED) control.SetInputOffset(-90); //90 is blue, -90 is red
+        if(control.navigation.side == FreightFrenzyNavigation_old.AllianceSide.BLUE) control.SetInputOffset(90); //90 is blue, -90 is red
+        else if(control.navigation.side == FreightFrenzyNavigation_old.AllianceSide.RED) control.SetInputOffset(-90); //90 is blue, -90 is red
         //control.navigation
         control.SetHeadlessMode(true);
     }
@@ -93,7 +93,7 @@ public class CuriosityTeleop extends OpMode implements ControllerInputListener
 
         if(control.navigation.IsThreadRunning()) return;
 
-        if(control.navigation.side == FreightFrenzyNavigation.AllianceSide.BLUE){
+        if(control.navigation.side == FreightFrenzyNavigation_old.AllianceSide.BLUE){
             telemetry.addData("Alliance Side", "BLUE");
             control.blinkinController.Blue();
         }
@@ -349,8 +349,8 @@ public class CuriosityTeleop extends OpMode implements ControllerInputListener
     public void LJSPressed(double controllerNumber) {
         if(controllerNumber == 1) {
             control.navigation.ToggleAllianceSide();
-            if(control.navigation.side == FreightFrenzyNavigation.AllianceSide.BLUE) control.SetInputOffset(90); //90 is blue, -90 is red
-            else if(control.navigation.side == FreightFrenzyNavigation.AllianceSide.RED) control.SetInputOffset(-90); //90 is blue, -90 is red
+            if(control.navigation.side == FreightFrenzyNavigation_old.AllianceSide.BLUE) control.SetInputOffset(90); //90 is blue, -90 is red
+            else if(control.navigation.side == FreightFrenzyNavigation_old.AllianceSide.RED) control.SetInputOffset(-90); //90 is blue, -90 is red
         }
         //if(controllerNumber == 2 && control.isUSE_PAYLOAD()) control.TurretArm().StartResetArm();
     }

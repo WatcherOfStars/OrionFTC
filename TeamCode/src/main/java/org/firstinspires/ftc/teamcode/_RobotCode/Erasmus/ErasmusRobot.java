@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.Core.HermesLog.HermesLog;
 import org.firstinspires.ftc.teamcode.Core.MechanicalControlToolkit.Basic.BaseRobot;
@@ -31,37 +32,38 @@ class ErasmusRobot extends BaseRobot
     public ErasmusRobot(OpMode setOpMode, boolean useChassis, boolean usePayload, boolean useNavigator) {
         //set up robot state parent
         super(FieldSide.BLUE,new Pose(0,0,0),usePayload,useChassis,useNavigator);
-        //initialize the chassis
-        chassis = new MecanumChassis(setOpMode, new _ChassisProfile(), new HermesLog("Erasmus", 200, setOpMode), this);
-
-        //sensors
-        DistanceSensor intakeDist = opMode.hardwareMap.get(DistanceSensor.class, "intakeDist");
-        DistanceSensor armLevelDist = opMode.hardwareMap.get(DistanceSensor.class, "armResetDist");
-        DistanceSensor duckDist = opMode.hardwareMap.get(DistanceSensor.class, "duckDist");
+        opMode = setOpMode;
 
         dashboard = FtcDashboard.getInstance();
 
+        if(USE_CHASSIS) {
+            //initialize the chassis
+            chassis = new MecanumChassis(setOpMode, new _ChassisProfile(), new HermesLog("Erasmus", 200, setOpMode), this);
+        }
 
         if(USE_PAYLOAD){
             //motors
             DcMotor armMotor = opMode.hardwareMap.dcMotor.get("Arm");
-            armMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+            //armMotor.setDirection(DcMotorSimple.Direction.REVERSE);
 
-            //DcMotor tapeMotor = opMode.hardwareMap.dcMotor.get("Tape");
             DcMotor turretMotor = opMode.hardwareMap.dcMotor.get("Turret");
             DcMotor duckMotor = opMode.hardwareMap.dcMotor.get("Duck");
-            DcMotor intakeMotor = opMode.hardwareMap.dcMotor.get("Intake");
-            MotorArray intake = new MotorArray(new DcMotor[]{intakeMotor},new double[]{1},false);
+            Servo intakeMotor = opMode.hardwareMap.servo.get("Intake");
+
+            //sensors
+            DistanceSensor intakeDist = opMode.hardwareMap.get(DistanceSensor.class, "intakeDist");
+            DistanceSensor duckDist = opMode.hardwareMap.get(DistanceSensor.class, "duckDist");
+            DistanceSensor armLevelDist = opMode.hardwareMap.get(DistanceSensor.class, "armResetDist");
+
 
             blinkinController = new BlinkinController(opMode);
 
             turretArm = new ErasmusTurretArm(opMode, this, blinkinController, new _ArmProfile(armMotor), new _TurretProfile(turretMotor),
-                    intake, intakeDist, armLevelDist,false);
+                    intakeMotor, intakeDist, armLevelDist,false);
             turretArm.arm.ResetToZero();
 
             duckSpinner = new DuckSpinner(duckMotor, 1);
 
-            //tapeMeasureCapper = new EncoderActuator(opMode,new _TapeMeasureProfile(tapeMotor));
         }
 
         if(useNavigator){
@@ -99,7 +101,13 @@ class ErasmusRobot extends BaseRobot
 
     public void Stop(){
         //navigation.StopNavigator();
-        turretArm.StopArmThread();
+        if(USE_PAYLOAD) {
+            turretArm.StopArmThread();
+            turretArm.armThread.StopAutoIntake();
+            turretArm.armThread.StopAutoLevelling();
+            turretArm.StopIntake();
+            turretArm.arm.SetPowerRaw(0);
+        }
     }
 
     public ErasmusTurretArm TurretArm(){return turretArm;}

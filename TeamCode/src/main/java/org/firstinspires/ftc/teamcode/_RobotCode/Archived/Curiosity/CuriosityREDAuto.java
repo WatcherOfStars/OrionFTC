@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
-import org.firstinspires.ftc.teamcode.Orion.NavModules.FreightFrenzy.FreightFrenzyNavigation;
+import org.firstinspires.ftc.teamcode.Orion.NavModules.FreightFrenzy.FreightFrenzyNavigation_old;
 
 @Autonomous(name = "RED Curiosity Auto", group = "Curiosity")
 @Config
@@ -14,11 +14,11 @@ import org.firstinspires.ftc.teamcode.Orion.NavModules.FreightFrenzy.FreightFren
 public class CuriosityREDAuto extends LinearOpMode
 {
     CuriosityRobot robot;
-    FreightFrenzyNavigation nav;
+    FreightFrenzyNavigation_old nav;
     public static double targetHeading = -90;
     public static double targetHeading2 = -200;
     private double multiplier = 1;
-    protected FreightFrenzyNavigation.AllianceSide side = FreightFrenzyNavigation.AllianceSide.RED;
+    protected FreightFrenzyNavigation_old.AllianceSide side = FreightFrenzyNavigation_old.AllianceSide.RED;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -45,12 +45,12 @@ public class CuriosityREDAuto extends LinearOpMode
 //
 //        nav.Wait(.5);
         //SCAN
-        FreightFrenzyNavigation.DuckPos pos = nav.ScanBarcodeOpenCV();
+        FreightFrenzyNavigation_old.DuckPos pos = nav.ScanBarcodeOpenCV();
         telemetry.update();
 
         //MOVE ARM TO POSITION
-        if(pos == FreightFrenzyNavigation.DuckPos.FIRST) robot.TurretArm().GoToTier(CuriosityTurretArm.Tier.BOTTOM);
-        else if(pos == FreightFrenzyNavigation.DuckPos.SECOND) robot.TurretArm().GoToTier(CuriosityTurretArm.Tier.MIDDLE);
+        if(pos == FreightFrenzyNavigation_old.DuckPos.FIRST) robot.TurretArm().GoToTier(CuriosityTurretArm.Tier.BOTTOM);
+        else if(pos == FreightFrenzyNavigation_old.DuckPos.SECOND) robot.TurretArm().GoToTier(CuriosityTurretArm.Tier.MIDDLE);
         else robot.TurretArm().GoToTier(CuriosityTurretArm.Tier.TOP);
 
         //PLACES FREIGHT

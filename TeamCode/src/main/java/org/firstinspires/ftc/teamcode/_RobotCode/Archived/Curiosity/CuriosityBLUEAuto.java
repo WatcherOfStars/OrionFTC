@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
-import org.firstinspires.ftc.teamcode.Orion.NavModules.FreightFrenzy.FreightFrenzyNavigation;
+import org.firstinspires.ftc.teamcode.Orion.NavModules.FreightFrenzy.FreightFrenzyNavigation_old;
 
 @Autonomous(name = "BLUE Curiosity Auto", group = "Curiosity")
 @Config
@@ -14,11 +14,11 @@ import org.firstinspires.ftc.teamcode.Orion.NavModules.FreightFrenzy.FreightFren
 public class CuriosityBLUEAuto extends LinearOpMode
 {
     CuriosityRobot robot;
-    FreightFrenzyNavigation nav;
+    FreightFrenzyNavigation_old nav;
     public static double targetHeading = -90;
     public static double targetHeading2 = -200;
     private double multiplier = 1;
-    protected FreightFrenzyNavigation.AllianceSide side = FreightFrenzyNavigation.AllianceSide.BLUE;
+    protected FreightFrenzyNavigation_old.AllianceSide side = FreightFrenzyNavigation_old.AllianceSide.BLUE;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -48,13 +48,13 @@ public class CuriosityBLUEAuto extends LinearOpMode
 //
 //        nav.Wait(.5);
         //SCAN
-        FreightFrenzyNavigation.DuckPos pos = nav.ScanBarcodeOpenCV();
+        FreightFrenzyNavigation_old.DuckPos pos = nav.ScanBarcodeOpenCV();
         telemetry.update();
 
         //MOVE ARM TO POSITION
-        if(pos == FreightFrenzyNavigation.DuckPos.FIRST) robot.TurretArm().GoToTier(CuriosityTurretArm.Tier.TOP);
-        if(pos == FreightFrenzyNavigation.DuckPos.SECOND) robot.TurretArm().GoToTier(CuriosityTurretArm.Tier.MIDDLE);
-        if(pos == FreightFrenzyNavigation.DuckPos.THIRD) robot.TurretArm().GoToTier(CuriosityTurretArm.Tier.BOTTOM);
+        if(pos == FreightFrenzyNavigation_old.DuckPos.FIRST) robot.TurretArm().GoToTier(CuriosityTurretArm.Tier.TOP);
+        if(pos == FreightFrenzyNavigation_old.DuckPos.SECOND) robot.TurretArm().GoToTier(CuriosityTurretArm.Tier.MIDDLE);
+        if(pos == FreightFrenzyNavigation_old.DuckPos.THIRD) robot.TurretArm().GoToTier(CuriosityTurretArm.Tier.BOTTOM);
 
         //PLACES FREIGHT
         nav.DriveForTime(120*multiplier,0.7,0,1.3);

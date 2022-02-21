@@ -5,7 +5,7 @@ import org.firstinspires.ftc.teamcode.Orion.FieldState.Pose;
 public class BaseRobot
 {
    public enum FieldSide {RED,BLUE}
-   public FieldSide currentSide;
+   public FieldSide fieldSide;
    public Pose robotPose;
    public boolean USE_PAYLOAD = false;
    public boolean USE_CHASSIS = false;

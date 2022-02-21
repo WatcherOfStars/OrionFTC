@@ -55,7 +55,7 @@ public class BlinkinController
         AUTO
     }
 
-    public BlinkinController(OpMode setOpMode)
+    public BlinkinController(OpMode setOpMode) //TODO: move hardware map get up to robot class
     {
         opMode = setOpMode;
         displayKind = DisplayKind.AUTO;

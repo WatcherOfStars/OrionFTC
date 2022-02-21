@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode._RobotCode.Erasmus;
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.Core.MechanicalControlToolkit.Basic.BaseRobot;
@@ -37,7 +38,7 @@ public class ErasmusTurretArm
    EncoderActuatorProfile turretProfile;
    public EncoderActuator turret;
 
-   MotorArray intake;
+   Servo intake;
 
    //Sensors
    public DistanceSensor intakeSensor;
@@ -73,7 +74,7 @@ public class ErasmusTurretArm
 
    public ErasmusTurretArm(OpMode setOpMode, BaseRobot setBaseRobot, BlinkinController setLights,
                            EncoderActuatorProfile setArmProfile, EncoderActuatorProfile setTurretProfile,
-                           MotorArray setIntake, DistanceSensor setIntakeDetector, DistanceSensor setLevelSensor,
+                           Servo setIntake, DistanceSensor setIntakeDetector, DistanceSensor setLevelSensor,
                            boolean reverseIntake)
    {
       opMode = setOpMode;
@@ -90,6 +91,8 @@ public class ErasmusTurretArm
       intakeSensor = setIntakeDetector;
       levelSensor = setLevelSensor;
 
+      armThread = new ArmThread(this);
+
       if(reverseIntake) intakeMultiplier = -1;
       else intakeMultiplier = 1;
    }
@@ -104,7 +107,8 @@ public class ErasmusTurretArm
    //sets the speed of the intake within a -1 to 1 range
    public void SetIntakeSpeed(double speed){
       double clampedSpeed = clamp(speed, -1,1);
-      intake.SetPowers(clampedSpeed);
+      double servoSpeed = (clampedSpeed * 0.5) + 0.5;
+      intake.setPosition(servoSpeed);
    }
 
    //Returns the arm to the base position and starts intaking without doing any reset or levelling
