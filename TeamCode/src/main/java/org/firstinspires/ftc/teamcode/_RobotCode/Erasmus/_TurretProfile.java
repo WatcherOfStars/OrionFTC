@@ -8,9 +8,9 @@ import org.firstinspires.ftc.teamcode.Core.MechanicalControlToolkit.Basic.MotorA
 class _TurretProfile implements EncoderActuatorProfile
 {
     DcMotor MOTOR;
-    double MAX_ROTS = 0.5;
-    double MIN_ROTS = -0.5;
-    double GEAR_RATIO = 9;
+    double MAX_ROTS = 180;
+    double MIN_ROTS = -180;
+    double GEAR_RATIO = 0.1; //(24*1.5)/360; //in degrees
     double ENCODER_RESOLUTION = 537.7; //gobilda 19.2:1
     boolean REVERSE_ENCODER = false;
     boolean USE_ENCODER = true;

@@ -5,20 +5,20 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.Core.InputSystem.ControllerInput;
-import org.firstinspires.ftc.teamcode.Core.InputSystem.ControllerInputListener;
+import org.firstinspires.ftc.teamcode.Core.InputSystem.ControllerInput_old;
+import org.firstinspires.ftc.teamcode.Core.InputSystem.ControllerInputListener_old;
 import org.firstinspires.ftc.teamcode.Orion.NavModules.FreightFrenzy.FreightFrenzyNavigation_old;
 
 
 @TeleOp(name = "*CURIOSITY TELEOP*", group = "Curiosity")
 @Config
 @Disabled
-public class CuriosityTeleop extends OpMode implements ControllerInputListener
+public class CuriosityTeleop extends OpMode implements ControllerInputListener_old
 {
     ////Dependencies////
     private CuriosityRobot control;
-    private ControllerInput controllerInput1;
-    private ControllerInput controllerInput2;
+    private ControllerInput_old controllerInput1;
+    private ControllerInput_old controllerInput2;
 
     ////Variables////
     //Tweaking Vars
@@ -48,9 +48,9 @@ public class CuriosityTeleop extends OpMode implements ControllerInputListener
         control = new CuriosityRobot(this, true, true, true);
         control.Init();
 
-        controllerInput1 = new ControllerInput(gamepad1, 1);
+        controllerInput1 = new ControllerInput_old(gamepad1, 1);
         controllerInput1.addListener(this);
-        controllerInput2 = new ControllerInput(gamepad2, 2);
+        controllerInput2 = new ControllerInput_old(gamepad2, 2);
         controllerInput2.addListener(this);
 
         //hardwareMap.dcMotor.get("FR").setDirection(DcMotorSimple.Direction.REVERSE);
@@ -108,7 +108,7 @@ public class CuriosityTeleop extends OpMode implements ControllerInputListener
 
         //Manage driving
         control.SetHeadingPID(turnP, turnI, turnD);
-        control.DriveWithGamepad(controllerInput1, driveSpeed, turnSpeed, speedMultiplier);
+        //control.DriveWithGamepad(controllerInput1, driveSpeed, turnSpeed, speedMultiplier);
 
         //print telemetry
         if(control.isUSE_NAVIGATOR()) {

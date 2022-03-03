@@ -115,6 +115,7 @@ public class ErasmusTurretArm
    public void ReturnToHomeAndIntake(){
       StartIntake();
       GoToTier(Tier.COLLECT);
+      turret.GoToPosition(0);
    }
 
    //Resets the arm and turns the intake on

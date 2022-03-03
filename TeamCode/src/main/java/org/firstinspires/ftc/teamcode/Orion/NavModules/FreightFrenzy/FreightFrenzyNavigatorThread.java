@@ -38,6 +38,7 @@ class FreightFrenzyNavigatorThread implements Runnable
         opMode = setOpMode;
         lights = setLights;
         navigator = setNavigator;
+        thread = new Thread(this);
     }
 
     ////THREAD CODE////

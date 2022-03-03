@@ -8,11 +8,11 @@ import org.firstinspires.ftc.teamcode.Core.MechanicalControlToolkit.Basic.MotorA
 class  _ArmProfile implements EncoderActuatorProfile
 {
     MotorArray MOTORS;
-    double MAX_ROTS = 0.34;
+    double MAX_ROTS = 0.29;
     double MIN_ROTS = 0;
     double GEAR_RATIO = 24;
     double ENCODER_RESOLUTION = 537.7; //gobilda 19.2:1
-    boolean REVERSE_ENCODER = false;
+    boolean REVERSE_ENCODER = true;
     boolean USE_ENCODER = true;
 
     public _ArmProfile(DcMotor motor){

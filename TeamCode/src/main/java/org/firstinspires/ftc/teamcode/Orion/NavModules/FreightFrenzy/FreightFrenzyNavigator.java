@@ -14,7 +14,7 @@ import org.firstinspires.ftc.teamcode.Core.MechanicalControlToolkit.Basic.BaseRo
 import org.firstinspires.ftc.teamcode.Core.MechanicalControlToolkit.Chassis.MecanumChassis;
 import org.firstinspires.ftc.teamcode.Orion.NavModules.Camera;
 import org.firstinspires.ftc.teamcode.Core.MechanicalControlToolkit.Extras.BlinkinController;
-import org.firstinspires.ftc.teamcode._RobotCode.Archived.Curiosity.DuckSpinner;
+import org.firstinspires.ftc.teamcode._RobotCode.Erasmus.DuckSpinner;
 import org.firstinspires.ftc.teamcode._RobotCode.Erasmus.ErasmusTurretArm;
 import org.opencv.core.Mat;
 import org.opencv.core.Rect;
@@ -95,20 +95,21 @@ public class FreightFrenzyNavigator
                                  DistanceSensor setDuckDist, DistanceSensor setIntakeDist, DistanceSensor setLevelSensor,
                                  DistanceSensor setPortDist, DistanceSensor setStarboardDist, ColorSensor setColorSensor,
                                  BlinkinController setBlinkin) {
+      //assign pass-through references
       opMode = setOpMode;
       robot =setRobot;
       chassis=setChassis;
       arm = setArm;
       lights = setBlinkin;
-
       duckSpinner = setSpinner;
+      //assign sensors
       duckDistance = setDuckDist;
       intakeDistance = setIntakeDist;
       levelSensor = setLevelSensor;
       portDist = setPortDist;
       starboardDist = setStarboardDist;
       colorSensor = setColorSensor;
-
+      //instantiate navigator-specific classes
       camera = new Camera(opMode,"Webcam 1");
       driveFuncs = new ChassisFunctions(opMode, chassis, this);
       navigatorThread = new FreightFrenzyNavigatorThread(opMode, lights, this);
@@ -238,17 +239,6 @@ public class FreightFrenzyNavigator
    }
 
    public void GoToPlaceLinear(){
-      //should start in the depot with the intake side facing away from hub (can start on white line)
-      //goToWall()
-      //wallFollowToWhite() from the south
-      //rotate arm to face shipping hub
-      //raise arm to the correct height
-      //dead reckon for time towards shipping hub's location
-      //zeroIn() on shipping hub using tensorflow
-      //when close enough, reverse intake
-      //when no freight is detected by intakeDist, goToWall() at a diagonal
-      //wallFollowToWhite() from the north
-
       //Turn to zero
       driveFuncs.TurnToAngle(0,0.8);
       driveFuncs.TurnToAngle(0,0.2);
