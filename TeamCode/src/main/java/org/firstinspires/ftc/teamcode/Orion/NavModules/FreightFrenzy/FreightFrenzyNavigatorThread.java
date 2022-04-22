@@ -45,7 +45,7 @@ class FreightFrenzyNavigatorThread implements Runnable
 
     public void SetThread(Thread setThread) {thread=setThread;}
 
-    //Runs in seperate thread
+    //Runs in separate thread
     @Override
     public void run() {
         opMode.telemetry.addLine("Nav Thread Start!");
@@ -91,8 +91,8 @@ class FreightFrenzyNavigatorThread implements Runnable
         lights.Yellow();
         threadRunning = false;
     }
-    public boolean IsThreadRunning(){return threadRunning;}
 
+    public boolean IsThreadRunning(){return threadRunning;}
 
     ////START FUNCTIONS////
     public void StartSpinDucks(int numberOfCycles){

@@ -17,6 +17,7 @@ import org.firstinspires.ftc.teamcode.Core.MechanicalControlToolkit.Chassis.Meca
 import org.firstinspires.ftc.teamcode.Orion.FieldState.Pose;
 import org.firstinspires.ftc.teamcode.Orion.NavModules.FreightFrenzy.FreightFrenzyNavigator;
 
+
 class ErasmusRobot extends BaseRobot
 {
     ////Dependencies////
@@ -33,7 +34,7 @@ class ErasmusRobot extends BaseRobot
 
     public ErasmusRobot(OpMode setOpMode, boolean useChassis, boolean usePayload, boolean useNavigator) {
         //set up robot state parent
-        super(FieldSide.BLUE,new Pose(0,0,0),usePayload,useChassis,useNavigator);
+        super(FieldSide.RED, new Pose(0,0,0), usePayload, useChassis, useNavigator);
         opMode = setOpMode;
 
         dashboard = FtcDashboard.getInstance();

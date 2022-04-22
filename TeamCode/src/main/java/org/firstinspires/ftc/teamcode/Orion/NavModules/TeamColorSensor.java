@@ -1,5 +1,5 @@
 package org.firstinspires.ftc.teamcode.Orion.NavModules;
 
-class ColorSensor {
+class TeamColorSensor {
 
 }

@@ -286,7 +286,8 @@ public class PIDController
 		// Calculate D Term
 		// Note, this is negative. This actually "slows" the system if it's doing
 		// the correct thing, and small values helps prevent output spikes and overshoot 
-		Doutput= -D*(actual-lastActual);
+		//Doutput= -D*(actual-lastActual);  // TODO: this is the original line
+		Doutput= -D*(actual-lastActual)/error ;
 		lastActual=actual;
 
 		// The Iterm is more complex. There's several things to factor in to make it easier to deal with.

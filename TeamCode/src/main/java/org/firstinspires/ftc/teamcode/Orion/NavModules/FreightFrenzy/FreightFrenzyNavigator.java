@@ -117,8 +117,6 @@ public class FreightFrenzyNavigator
       sideMultiplier = CalculateSideMultiplier();
    }
 
-
-
    public void DriveAndSpinDucksLinear(int numberOfCycles, double speed){
       NavigatorOn();
       //should start along side wall north of warehouse with intake facing south
@@ -135,7 +133,6 @@ public class FreightFrenzyNavigator
       duckSpinner.Stop();
       chassis.RawDrive(0,0,0);
    }
-
 
    public void ParkInWarehouseLinear(double speed, boolean parkFurtherIn){
       //should start along side wall north of warehouse with intake facing south

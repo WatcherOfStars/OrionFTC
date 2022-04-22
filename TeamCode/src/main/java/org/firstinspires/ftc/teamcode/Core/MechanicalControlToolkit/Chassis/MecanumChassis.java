@@ -52,7 +52,6 @@ public class MecanumChassis
 
     public ChassisProfile profile;
 
-
     //Initializer
     public MecanumChassis(OpMode setOpMode, ChassisProfile setProfile, HermesLog setLog, BaseRobot setBaseRobot)
     {
@@ -85,6 +84,7 @@ public class MecanumChassis
             driveMotors.SetPowers(new double[]{0,0,0,0});
 
             headingPIDController = new PIDController(0,0,0);//Create the pid controller.
+            //headingPIDController.setDirection(true); // TODO: Check - Flip PID direction <EA>
             speedPID = new PIDController(0,0,0);//Create the pid controller.
             directionPID = new PIDController(0,0,0);//Create the pid controller.
 
@@ -123,7 +123,7 @@ public class MecanumChassis
         }
         //TURN if right joystick magnitude > 0.1 and not moving
         else if (Math.abs(controllerInput.GetRJSX()) > 0.1) {
-            RawTurn(controllerInput.GetRJSX() * turnSpeed * speedMultiplier);//turns at speed according to rjs1
+            RawTurn(controllerInput.GetRJSX() * turnSpeed * speedMultiplier); //turns at speed according to rjs1
             opMode.telemetry.addData("Turning", true);
         }
         else {
@@ -157,10 +157,9 @@ public class MecanumChassis
         double magPIDOffset = speedPID.getOutput(speed, velocityMag);
         double dirPIDOffset = directionPID.getOutput(finalAngle, velocityDir);
 
-
         //set the powers of the motors with pid offset applied
         if(profile.flipIMU()) headingPIDOffset *= -1;
-
+        //opMode.telemetry.addData("headingPIDOffset= ", headingPIDOffset) ;
         //Gets speeds for the motors
         double[] speeds = CalculateWheelSpeedsTurning(finalAngle, speed, turnOffset+headingPIDOffset);
         //SetMotorSpeeds(speeds[0]+headingPIDOffset, speeds[1]+headingPIDOffset, speeds[2]+headingPIDOffset, speeds[3]+headingPIDOffset);
@@ -169,6 +168,69 @@ public class MecanumChassis
         //Updates brake pos, as this is called continuously as robot is driving
         UpdateEncoderBrakePos();
     }
+
+    public void combinedRawDrive(double inputAngle, double speed, double targetAngle, double turnSpeed){
+        double finalAngle = inputAngle;
+        if(headlessMode) finalAngle += imu.GetRobotAngle();
+        //Sets the mode so that robot can drive and record encoder values
+        driveMotors.RunWithoutEncodersMode();
+
+        /*
+        //Angle PID//  //TODO: Delete once we're sure the new way works <EA>
+        double currentAngle = imu.GetRobotAngle() ;
+        if (targetAngle-currentAngle < -180) { targetAngle += 360 ; }
+        else if (targetAngle-currentAngle > 180) { targetAngle -= 360 ; }
+        double anglePIDOffset = headingPIDController.getOutput(currentAngle, targetAngle) ;
+        if(!(anglePIDOffset > 0 || anglePIDOffset <= 0)) {
+            headingPIDController.reset();
+        }
+        //if(profile.flipIMU()) anglePIDOffset *= -1;  TODO: Check this
+        //opMode.telemetry.addData("headingPIDOffset= ", anglePIDOffset) ;
+        */
+
+        //set the powers of the motors with pid offset applied
+        //Gets speeds for the motors
+        double[] speeds = CalculateWheelSpeedsTurning(finalAngle, speed, turnRate(targetAngle)*turnSpeed) ;
+        SetMotorSpeeds(speeds[0], -speeds[1], speeds[2], -speeds[3]);
+        //Updates brake pos, as this is called continuously as robot is driving
+        UpdateEncoderBrakePos();
+    }
+
+    public void combinedDrive(ControllerInput controllerInput, double driveSpeed, double turnSpeed, double speedMultiplier, double autoDriveMag, double autoDriveAngle, double targetAngle ) {
+        if ((controllerInput.CalculateLJSMag() < 0.1) && (autoDriveMag == 0)) {
+            // We have to make the in-place turn slower than driving, which doing other things too. That's why we multiply by 0.6.
+            double turnCorrection = 0.6*turnRate(targetAngle)*speedMultiplier*turnSpeed ;
+            if (turnCorrection == 0) SetMotorSpeeds(0,0,0,0) ;   // no input + no automation = stop
+            else SetMotorSpeeds(turnCorrection, -turnCorrection, turnCorrection, -turnCorrection) ;
+        }
+        else {
+            // Add the 2 vectors
+            double combinedX = autoDriveMag * Math.sin(Math.toRadians(autoDriveAngle)) + controllerInput.GetLJSX() ;
+            double combinedY = autoDriveMag * Math.cos(Math.toRadians(autoDriveAngle)) + controllerInput.GetLJSY() ;
+            double combinedMag = Math.abs(Math.sqrt(Math.pow(combinedX - 0, 2) + Math.pow(combinedY - 0, 2)));
+            double combinedAngle = Math.toDegrees(Math.atan2(combinedY, combinedX)) - 90 ;
+            if (combinedAngle < 0) { combinedAngle += 360 ; }
+            // Send the drive command based on the combined vectors
+            combinedRawDrive(combinedAngle+inputOffset, combinedMag * driveSpeed * speedMultiplier, targetAngle, speedMultiplier*turnSpeed);//drives at (angle, speed, turnOffset)
+        }
+    }
+
+    public double turnRate(double targetAngle) {
+        double currentAngle = imu.GetRobotAngle();
+        // The bread and butter of this method - get the angle ranges aligned
+        if (targetAngle - currentAngle < -180) targetAngle += 360;
+        else if (targetAngle - currentAngle > 180) targetAngle -= 360;
+        double error = targetAngle - currentAngle ;
+        // Do nothing if we are VERY close.
+        if (Math.abs(error) < 3) return 0 ;
+        // Do a full turn if we are not close. (-1 or 1)
+        else if (Math.abs(error) > 30) return Math.signum(targetAngle - currentAngle) ;
+        // If we're close, do the PID correction. We need to do a little offset to make sure it actually moves.
+        else {
+            return error/30 + Math.signum(error)*0.01 ;
+        }
+    }
+
     public void RawDriveTurningTowards(double driveAngle, double speed, double facingAngle, double turnCoefficient){
         double turnOffset = GetHeadingError(facingAngle)*speed*turnCoefficient;
         RawDrive(driveAngle,speed,turnOffset);
