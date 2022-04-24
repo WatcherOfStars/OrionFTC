@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode._RobotCode.Erasmus;
+package org.firstinspires.ftc.teamcode._RobotCode.Demobot2022;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -15,21 +15,17 @@ import org.firstinspires.ftc.teamcode.Core.MechanicalControlToolkit.Chassis.Meca
 import org.firstinspires.ftc.teamcode.Navigation.FieldState.Pose;
 import org.firstinspires.ftc.teamcode.Navigation.FreightFrenzy.FreightFrenzyNavigator;
 
-class ErasmusRobot extends BaseRobot
+class Demobot extends BaseRobot
 {
     ////Dependencies////
     OpMode opMode;
     //Mechanical Components
-    public MecanumChassis chassis;
-    public ErasmusTurretArm turretArm;
-    public FreightFrenzyNavigator navigator;
-    DuckSpinner duckSpinner;
     BlinkinController blinkinController;
 
     //Misc
     FtcDashboard dashboard;
 
-    public ErasmusRobot(OpMode setOpMode, boolean useChassis, boolean usePayload, boolean useNavigator) {
+    public Demobot(OpMode setOpMode, boolean useChassis, boolean usePayload, boolean useNavigator) {
         //set up robot state parent
         super(FieldSide.BLUE,new Pose(0,0,0),usePayload,useChassis,useNavigator);
         opMode = setOpMode;
@@ -38,7 +34,6 @@ class ErasmusRobot extends BaseRobot
 
         if(USE_CHASSIS) {
             //initialize the chassis
-            chassis = new MecanumChassis(setOpMode, new _ChassisProfile(), new HermesLog("Erasmus", 200, setOpMode), this);
         }
 
         if(USE_PAYLOAD){
@@ -58,12 +53,6 @@ class ErasmusRobot extends BaseRobot
 
             blinkinController = new BlinkinController(opMode);
 
-            turretArm = new ErasmusTurretArm(opMode, this, blinkinController, new _ArmProfile(armMotor), new _TurretProfile(turretMotor),
-                    intakeMotor, intakeDist, armLevelDist,false);
-            turretArm.arm.ResetToZero();
-
-            duckSpinner = new DuckSpinner(duckMotor, 1);
-
         }
 
         if(USE_NAVIGATOR){
@@ -75,8 +64,7 @@ class ErasmusRobot extends BaseRobot
             DistanceSensor armLevelDist = opMode.hardwareMap.get(DistanceSensor.class, "armResetDist");
             ColorSensor colorSensor = opMode.hardwareMap.colorSensor.get("colorSensor");
             //initialize navigator
-            navigator = new FreightFrenzyNavigator(opMode, this, chassis, turretArm, duckSpinner,
-                    duckDist, intakeDist, armLevelDist, portDist, starboardDist, colorSensor, blinkinController);
+
         }
     }
 
@@ -85,7 +73,7 @@ class ErasmusRobot extends BaseRobot
         //TODO ===INIT PAYLOAD===
 
         //TODO ===INIT CORE ROBOT===
-        chassis.InitCoreRobotModules();
+        //chassis.InitCoreRobotModules();
 
 
         if(USE_NAVIGATOR) {
@@ -94,8 +82,8 @@ class ErasmusRobot extends BaseRobot
 
     public void Start(){
 
-        chassis.StartCoreRobotModules();
-        if(USE_NAVIGATOR) navigator.NavigatorOn();
+        //chassis.StartCoreRobotModules();
+        //if(USE_NAVIGATOR) navigator.NavigatorOn();
     }
 
     public void Update(){
@@ -103,23 +91,13 @@ class ErasmusRobot extends BaseRobot
         }
     }
 
+    //TODO make sure to stop everything
     public void Stop(){
-        //navigation.StopNavigator();
         if(USE_PAYLOAD) {
-            turretArm.StopArmThread();
-            turretArm.armThread.StopAutoIntake();
-            turretArm.armThread.StopAutoLevelling();
-            turretArm.StopIntake();
-            turretArm.arm.SetPowerRaw(0);
+
         }
     }
 
-    public ErasmusTurretArm TurretArm(){return turretArm;}
-    public EncoderActuator Turret(){return turretArm.turret;}
-    public EncoderActuator Arm(){return turretArm.arm;}
-    public FreightFrenzyNavigator Navigator(){return navigator;}
-
-    public DuckSpinner DuckSpinner(){return duckSpinner;}
 
     public BlinkinController Lights(){return blinkinController;}
 

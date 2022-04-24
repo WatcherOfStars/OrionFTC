@@ -5,7 +5,6 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 import org.firstinspires.ftc.teamcode.Core.InputSystem.ControllerInput;
-import org.firstinspires.ftc.teamcode.Core.InputSystem.ControllerInput_old;
 import org.firstinspires.ftc.teamcode.Core.MechanicalControlToolkit.Basic.BaseRobot;
 import org.firstinspires.ftc.teamcode.Core.MechanicalControlToolkit.Basic.MotorArray;
 import org.firstinspires.ftc.teamcode.Core.MechanicalControlToolkit.Basic.PIDController;
