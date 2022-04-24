@@ -17,6 +17,9 @@ public class EncoderActuator
     public double encoderResolution;
     public double encoderMultiplier;
     public boolean useEncoder;
+
+    //private
+    private double currentTargetPosition = 0;
     
     public EncoderActuator(OpMode setOpMode, EncoderActuatorProfile setProfile){
         profile = setProfile;
@@ -77,6 +80,33 @@ public class EncoderActuator
 
         motors.RunWithEncodersMode();
         motors.SetPowers(power);
+    }
+
+    public void ChangeCurrentTargetRotation(double deltaAmount, double speed){
+        double newPos = currentTargetPosition + deltaAmount;
+        if(newPos > maxRots) {
+            GoToPosition(maxRots);
+            return;
+        }
+        else if(newPos < minRots) {
+            GoToPosition(minRots);
+            return;
+        }
+        motors.SetPowers(speed);
+        GoToPosition(newPos);
+    }
+    public void ChangeCurrentTargetRotation(double deltaAmount, double speed, double min, double max){
+        double newPos = currentTargetPosition + deltaAmount;
+        if(newPos > maxRots || newPos > max) {
+            GoToPosition(maxRots);
+            return;
+        }
+        else if(newPos < minRots || newPos < min) {
+            GoToPosition(minRots);
+            return;
+        }
+        motors.SetPowers(speed);
+        GoToPosition(newPos);
     }
 
     //Set the motors power freely

@@ -47,6 +47,8 @@ public class ErasmusTurretArm
    //Configuration
    public static double intakeMultiplier = 1;
    public static double armIntakeDist = 4;
+   public static double armMoveCoefficient = 0.01;
+   public static double turretMoveCoefficient = 0.1;
 
    //arm positions for each of the levels
    public static double armIntakePos = 0;
@@ -95,6 +97,18 @@ public class ErasmusTurretArm
 
       if(reverseIntake) intakeMultiplier = -1;
       else intakeMultiplier = 1;
+   }
+
+   //ARM AND TURRET MOVEMENT
+   public void RotateTurret(double speed){
+      turret.ChangeCurrentTargetRotation(turretMoveCoefficient*speed,speed);
+   }
+   public void RotateArm(double speed){
+      arm.ChangeCurrentTargetRotation(armMoveCoefficient*speed,speed);
+   }
+
+   public double[] GetTurretArmBounds(double turretRot, double armRot){ //{turret min, turret max, arm min, arm max}, prioritizes arm
+      return new double[]{0,0,0,0};
    }
 
    //MANAGE COLLECTION
