@@ -199,7 +199,7 @@ public class MecanumChassis
     public void combinedDrive(ControllerInput controllerInput, double driveSpeed, double turnSpeed, double speedMultiplier, double autoDriveMag, double autoDriveAngle, double targetAngle ) {
         if ((controllerInput.CalculateLJSMag() < 0.1) && (autoDriveMag == 0)) {
             // We have to make the in-place turn slower than driving, which doing other things too. That's why we multiply by 0.6.
-            double turnCorrection = 0.6*turnRate(targetAngle)*speedMultiplier*turnSpeed ;
+            double turnCorrection = 1*turnRate(targetAngle)*speedMultiplier*turnSpeed ;
             if (turnCorrection == 0) SetMotorSpeeds(0,0,0,0) ;   // no input + no automation = stop
             else SetMotorSpeeds(turnCorrection, -turnCorrection, turnCorrection, -turnCorrection) ;
         }
@@ -227,7 +227,8 @@ public class MecanumChassis
         else if (Math.abs(error) > 30) return Math.signum(targetAngle - currentAngle) ;
         // If we're close, do the PID correction. We need to do a little offset to make sure it actually moves.
         else {
-            return error/30 + Math.signum(error)*0.01 ;
+            //return error/30 + Math.signum(error)*0.05 ; // TODO: This is where we speed up our turns
+            return error/30 + Math.signum(error)*0.05 ; // TODO: This is where we speed up our turns
         }
     }
 

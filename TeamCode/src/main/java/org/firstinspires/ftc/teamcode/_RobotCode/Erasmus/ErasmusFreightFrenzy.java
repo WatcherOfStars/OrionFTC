@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode._RobotCode.Erasmus;
 
+import android.graphics.Bitmap;
+
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -17,6 +19,12 @@ import org.firstinspires.ftc.teamcode.Core.MechanicalControlToolkit.Attachments.
 import org.firstinspires.ftc.teamcode.Core.MechanicalControlToolkit.Basic.BaseRobot;
 import org.firstinspires.ftc.teamcode.Core.MechanicalControlToolkit.Chassis.MecanumChassis;
 import org.firstinspires.ftc.teamcode.Orion.FieldState.Pose;
+import org.firstinspires.ftc.teamcode.Orion.NavModules.FreightFrenzy.FreightFrenzyNavigator;
+import org.firstinspires.ftc.teamcode.Orion.NavModules.Camera;
+import org.opencv.core.Mat;
+import org.opencv.core.Rect;
+import org.opencv.core.Scalar;
+
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
 import java.util.Hashtable;
@@ -38,7 +46,7 @@ public class ErasmusFreightFrenzy extends BaseRobot // implements Runnable
     //public ErasmusPayload payload;
     //Misc
     FtcDashboard dashboard;
-    public static double turnCoefficient = 0.02;
+    public static double turnCoefficient = 0.02 ;
     //@Config
     public static double armTop ;
     public DigitalChannel ledRed ;
@@ -49,37 +57,64 @@ public class ErasmusFreightFrenzy extends BaseRobot // implements Runnable
     //public static int colorWhiteThreshold = 90 ;  // for V3 sensor
     public static int colorWhiteThreshold = 800 ;  // for V2 sensor
 
-    public static double colorBackupSpeed = 0.7 ;
-
+    public static double colorBackupSpeed = 0.9 ;
+    public static double sharedHubBackupSpeed = 0.7 ;
+    public static double sharedHubTurretAngle = 110 ;
 
     // NEW Servo Turret =====================================
     //public ServoThroughBoreTurret newTurret ;
-    // NEW Servo Turret =====================================
+    // NEW Rev Hex Core Turret =====================================
     public DcEncoderActuator newTurret ;
-    public static double turretResolution = 2.35 ;
-    public static double turretSpeed = 0.7 ;
-    public static double turretPointP  = 10 ;
+    public static double turretResolution = 3.22 ;
+    public static double turretSpeed = 0.9 ;
+    public static double turretEncoderPoint  = 2.2 ;
+    public static double turretManualPower = 1 ;
+    public static double turretEncoderPower = 0.1 ;
+    public static double turretOffset = 0.15 ;
     // NEW DC Motor Arm======================================
     public DcEncoderActuator newArm ;
-    public double armPower = 0.3 ;
-    public static double armPointP  = 10 ;
+    public static double armPower = 0.9 ;
+    public static double armEncoderPoint  = 1.2 ;
+    public static double armManualPower = 0.7 ;
+    public static double armEncoderPower = 0.1 ;
+    public static double armOffset = 0.25 ;
+    public static double ARM_TOP = -78 ;
+    public static double ARM_MIDDLE = -45 ;
+    public static double ARM_BOTTOM = -32 ;
     // NEW Servo Intake =====================================
-    public IntakeServoController newIntake ;
+    //public IntakeServoController newIntake ;
+    public IntakeDCMotorController newIntake ;
     // NEW State Process ====================================
     public double targetArmPosition = 0 ;
     public double targetTurretPosition = 0 ;
     public double targetIntakeState = 0 ;
-    public double targetRobotAngle  = 0;
+    public double targetRobotAngle  = 0 ;
+    // Element Gripper  =====================================
+    public Servo elementServo ;
+    public static double elementServoMin = 0 ;
+    public static double elementServoMid = 0.3 ;
+    public static double elementServoMax = 0.45 ;
     // NEW Sensors ==========================================
     ColorSensor colorSensor ;
     TouchSensor intakeTouchSensor ;
+    DistanceSensor leftDistance ;
+    DistanceSensor rightDistance ;
+    DistanceSensor frontDistance ;
+    DistanceSensor rearDistance ;
+    // Webcams ==============================================
+    private Camera camera ;
+    public static int max1 = 40 ;
+    public static int max2 = 255 ;
+    public static int max3 = 255 ;
+    public static int min1 = 0 ;
+    public static int min2 = 110 ;
+    public static int min3 = 130 ;
     // For combining controller input with auto driving =====
     public double autoDriveHeading ;
     public double autoDriveSpeed ;
     public double autoTurnOffset ;
-    public double manualSpeedMultiplier ;
-
-    // ======================================================
+    // =====================================================
+    public boolean stopThread = false ;
 
     public ErasmusFreightFrenzy(OpMode setOpMode, boolean useChassis, boolean usePayload, boolean useNavigator) {
         //set up robot state parent
@@ -92,22 +127,27 @@ public class ErasmusFreightFrenzy extends BaseRobot // implements Runnable
         }
         opMode.telemetry.update();
         if(USE_PAYLOAD){
-            //motors
-            //DcMotor armMotor = opMode.hardwareMap.dcMotor.get("Arm");
-            //armMotor.setDirection(DcMotorSimple.Direction.REVERSE); // Sometimes need this after changing gears.
-            //Servo intakeMotor = opMode.hardwareMap.servo.get("Intake");
-            //ColorSensor colorSensor =  opMode.hardwareMap.colorSensor.get("colorSensor") ;
+            //sensors
             colorSensor =  opMode.hardwareMap.get(ColorSensor.class, "colorSensor") ;
             intakeTouchSensor = opMode.hardwareMap.touchSensor.get("touchSensor") ;
+            rightDistance = opMode.hardwareMap.get(DistanceSensor.class, "rightDistance") ;
+            leftDistance = opMode.hardwareMap.get(DistanceSensor.class, "leftDistance") ;
+            frontDistance = opMode.hardwareMap.get(DistanceSensor.class, "frontDistance") ;
+            rearDistance = opMode.hardwareMap.get(DistanceSensor.class, "rearDistance") ;
+
             // NEW turret ======================================================
             newTurret = new DcEncoderActuator(opMode, "Turret", turretResolution);
             newTurret.setSpeed( turretSpeed );
+            newTurret.useBrake = true ;
             //newTurret = new ServoThroughBoreTurret( opMode, "Turret", "Turret" ) ;
             // NEW Arm =======================================================
             newArm = new DcEncoderActuator(opMode, "Arm", 24*(537.7/360));
+            newArm.useBrake = true ;
             // NEW Intake =======================================================
-            newIntake = new IntakeServoController(opMode, "Intake") ;
-
+            //newIntake = new IntakeServoController(opMode, "Intake") ;
+            newIntake = new IntakeDCMotorController(opMode, "Intake") ;
+            // Element Gripper
+            elementServo = opMode.hardwareMap.servo.get("elementServo" ) ;
             //sensors
             //DistanceSensor intakeDist = opMode.hardwareMap.get(DistanceSensor.class, "intakeDist");
             //payload = new ErasmusPayload(opMode, new _ArmProfile(armMotor), intakeMotor, intakeDist, false);
@@ -118,6 +158,9 @@ public class ErasmusFreightFrenzy extends BaseRobot // implements Runnable
             ledRed = opMode.hardwareMap.get(DigitalChannel.class, "red") ;
             ledRed.setMode(DigitalChannel.Mode.INPUT) ;
             ledGreen.setMode(DigitalChannel.Mode.INPUT) ;
+            // Camera
+            camera = new Camera(opMode,"Webcam 1");
+
         }
 
         // Ignore USE_NAVIGATOR. We are going to attempt to combine it within this very class.
@@ -155,144 +198,390 @@ public class ErasmusFreightFrenzy extends BaseRobot // implements Runnable
 
     public void updateState(ControllerInput controllerInput1, double driveSpeed, double turnSpeed, double speedMultiplier) {
         // Move arm to position
-        newArm.pointP = armPointP ;
-        newArm.setTarget(targetArmPosition) ;
+        newArm.encoderPoint = armEncoderPoint ;
+        newArm.encoderPower = armEncoderPower ;
+        newArm.manualPower = armManualPower ;
+        newArm.setSpeed(armPower) ;
+        newArm.speedOffset = armOffset ;
+        //newArm.setTarget(targetArmPosition) ;
         // Move turret to position
-        newTurret.pointP = turretPointP ;
-        newTurret.setTarget(targetTurretPosition) ;
+        newTurret.encoderPoint = turretEncoderPoint ;
+        newTurret.encoderPower = turretEncoderPower ;
+        newTurret.manualPower = turretManualPower ;
+        newTurret.setSpeed(turretSpeed) ;
+        newTurret.speedOffset = turretOffset ;
+        //newTurret.setTarget(targetTurretPosition) ;
+        setInterlock() ;
         // Driving based on controller and automation
         chassis.combinedDrive( controllerInput1, driveSpeed, turnSpeed, speedMultiplier, autoDriveSpeed, autoDriveHeading, targetRobotAngle ) ;
         // Manage intake state
         newIntake.runIntake(targetIntakeState);
     }
 
+    public void setInterlockOld() {
+        double currentTurretPosition = newTurret.getPosition() ;
+        double currentArmPosition = newArm.getPosition() ;
+        // Send TURRET target
+        //if (currentArmPosition<-31 | (targetTurretPosition<3 & targetTurretPosition>-3)) {
+        if (currentArmPosition<-31 ) {
+            newTurret.setTarget(targetTurretPosition) ;
+        }
+        //else if (currentTurretPosition<3 & currentTurretPosition>-3) newTurret.setTarget(0) ;
+        else if (currentTurretPosition<4 & currentTurretPosition>-4) newTurret.setTarget(0) ;
+
+        else newTurret.setTarget(targetTurretPosition) ;
+
+        // Send ARM target
+        if ((currentTurretPosition>3 | currentTurretPosition<-3) & targetArmPosition>-31 & currentArmPosition < -25) {
+            newArm.setTarget(-31) ; // Do Nothing
+        }
+        else  { newArm.setTarget(targetArmPosition) ; }
+    }
+
+
+
+
     public void setInterlock() {
         double currentTurretPosition = newTurret.getPosition() ;
         double currentArmPosition = newArm.getPosition() ;
-        if (currentArmPosition<-30 ) {
-            newTurret.setTarget(targetTurretPosition) ;
-        }
-        if (currentTurretPosition<4 & currentTurretPosition>-4 ) {
+        // Intake Zone
+        if (currentTurretPosition<3.5 & currentTurretPosition>-3.5) {
             newArm.setTarget(targetArmPosition) ;
+            if (currentArmPosition<-31 ) {
+                newTurret.setTarget(targetTurretPosition) ;
+            }
+            else newTurret.setTarget(0) ;
         }
-        else if ( targetArmPosition<currentArmPosition ) {
-            newArm.setTarget(targetArmPosition) ;
+        // Side Zones
+        else {
+            if (targetArmPosition>-32) {
+                newArm.setTarget(-33) ;
+            }
+            else newArm.setTarget(targetArmPosition) ;
+            if (currentArmPosition<100) { // TODO: Review this (skipping the else right now
+                newTurret.setTarget(targetTurretPosition) ;
+            }
+            else newTurret.setTarget(currentTurretPosition) ;
         }
-        newArm.setTarget(targetArmPosition) ;
     }
 
-    public void testSequence1() {
-        targetArmPosition = -30 ;
-        DriveForTime(0, -0.8, 0, 1 ) ;
-        targetTurretPosition = 90 ;
-        targetArmPosition = -80 ;
-        DriveForTime(0, 0.5, 0, 1) ;
-        DriveForTime(90, 0.5, 0, 0.8) ;
-        targetIntakeState = -0.5 ;
-        Wait(1) ;
+
+
+    public void resetSequence() {
         targetIntakeState = 0 ;
         targetTurretPosition = 0 ;
+        targetArmPosition = -34 ;
         Wait(2) ;
         targetArmPosition = 0 ;
+        targetTurretPosition = 0 ;
     }
+
+
+    public void redAutonomous() {
+        double cutoffTime = opMode.getRuntime()+23 ;
+        // Move arm to staging position
+        targetArmPosition = -45 ;
+        targetTurretPosition = -110 ;
+        // Read bar code
+        FreightFrenzyNavigator.DuckPos barcodePosition = null ;
+        try {barcodePosition = ScanBarcodeOpenCV();} catch(Exception e){ barcodePosition = null ;}
+        // Raise / lower arm to bar code position
+        switch (barcodePosition) {
+            case FIRST:
+                targetArmPosition = ARM_BOTTOM ;
+                break ;
+            case SECOND:
+                targetArmPosition = ARM_MIDDLE ;
+                break ;
+            default:
+                targetArmPosition = ARM_TOP ;
+                break ;
+        }
+        Wait(0.2) ;
+        // Drive to deliver position
+        DriveForTime(-65, 1, 0, 0.85) ;
+        // Release freight
+        targetIntakeState = -0.5 ;
+        Wait(0.3) ;
+        targetTurretPosition = 0 ;
+        DriveForTime(100, 1, 0, 0.3) ;
+        // Go back to the wall
+        targetArmPosition = 0 ;
+        targetIntakeState = 0 ;
+        DriveForTime(115, 1, 0, 0.6) ;
+        // Drive into warehouse to start loop
+        WallFollowToWhite(colorBackupSpeed, 150, 1.5);
+        DriveForTime(170, 1, 0, 0.1);
+        // Delivery Loop =================================
+        int loopCounter = 4 ;
+        while (loopCounter > 0 && opMode.getRuntime()<cutoffTime) {
+            // Get payload into position
+            targetArmPosition = 0;
+            targetTurretPosition = 0;
+            // Start intake
+            targetIntakeState = 1;
+            autoDriveSpeed = 0.35;
+            autoDriveHeading = -140 ;
+            int countDown = 1200;
+            while (!intakeTouchSensor.isPressed() & countDown > 0) {
+                countDown -= 1;
+                //autoDriveHeading -= 0.1 ;  // Turn a little to get a better intake position
+            }
+            autoDriveSpeed = 0;
+            autoDriveHeading = 0;
+            targetArmPosition = ARM_TOP;
+            targetTurretPosition = -110;
+            // >>>>>>>>>>>>>> Intake Complete <<<<<<<<<<<<<<<<
+            // Drive to white line
+            DriveForTime(10, 0.8, 0, 0.05) ;
+            targetIntakeState = 0;
+            DriveForTime(50, 1, 0, 0.3) ;
+            WallFollowToWhite(colorBackupSpeed, 30, 2.0);
+            // At the line Get past pipes and strafe
+            DriveForTime(0, 1, 0, 0.1);
+            DriveForTime(-75, 1, 0, 0.85);
+            targetIntakeState = -0.5;
+            Wait(0.4);
+            targetTurretPosition = 0;
+            DriveForTime(100, 1, 0, 0.3) ;
+            // >>>>>>>>>>>>>>> Deliver Complete <<<<<<<<<<<<<<<<<<<<
+            targetIntakeState = 0;
+            targetArmPosition = 0;
+            //Wait(0.5) ;
+            DriveForTime(115, 1, 0, 0.7);
+            WallFollowToWhite(colorBackupSpeed, 150, 1);
+            DriveForTime(170, 1, 0, 0.1);
+            loopCounter -= 1 ;
+        }
+        DriveForTime(170, 1, 0, 0.2);
+
+    }
+
+    public void redTeamHubDeliver() {
+        int loopCounter = 1 ;
+        while (loopCounter > 0) {
+            // Get payload into position
+            targetArmPosition = 0;
+            targetTurretPosition = 0;
+            // Start intake
+            targetIntakeState = 1;
+            autoDriveSpeed = 0.2;
+            autoDriveHeading = 180;
+            int countDown = 1500;
+            while (!intakeTouchSensor.isPressed() & countDown > 0) {
+                countDown -= 1;
+                //autoDriveHeading -= 0.1 ;  // Turn a little to get a better intake position
+            }
+            autoDriveSpeed = 0;
+            autoDriveHeading = 0;
+            targetArmPosition = -75;
+            targetTurretPosition = -95;
+            // >>>>>>>>>>>>>> Intake Complete <<<<<<<<<<<<<<<<
+            // Drive to white line
+            DriveForTime(10, 0.8, 0, 0.05) ;
+            targetIntakeState = 0;
+            DriveForTime(40, 1, 0, 0.3) ;
+            WallFollowToWhite(colorBackupSpeed, 30, 2.5);
+            // At the line Get past pipes and strafe
+            DriveForTime(0, 1, 0, 0.2);
+            DriveForTime(-95, 1, 0, 0.8);
+            targetIntakeState = -0.6;
+            Wait(0.4);
+            // >>>>>>>>>>>>>>> Deliver Complete <<<<<<<<<<<<<<<<<<<<
+            targetIntakeState = 0;
+            targetTurretPosition = 0;
+            targetArmPosition = 0;
+            //Wait(0.5) ;
+            DriveForTime(105, 1, 0, 0.9);
+            WallFollowToWhite(colorBackupSpeed, -150, 2.5);
+            DriveForTime(-170, 0.8, 0, 0.3);
+            loopCounter -= 1 ;
+        }
+    }
+
+    public void redSharedHubDeliver() {
+        // =============  Intake until sensed ==============
+        int loopCounter = 1 ;
+        while (loopCounter > 0 & !stopThread) {
+            // Start in warehouse, just across the line, against the wall.
+            // Get payload into position
+            targetArmPosition = 0;
+            targetTurretPosition = 0;
+            // Start intake
+            targetIntakeState = 1;
+            autoDriveSpeed = 0.3;
+            autoDriveHeading = 150;
+            int countDown = 1500; // Consider eliminating this for teleop (why deliver empty?)
+            while (!intakeTouchSensor.isPressed() & countDown > 0) {
+                countDown -= 1 ;
+                //autoDriveHeading -= 0.1 ; // Turn a little to get a better intake position
+            }
+            autoDriveSpeed = 0 ;
+            autoDriveHeading = 0 ;
+            // >>>>>>>>>>>>>> Intake Complete <<<<<<<<<<<<<<<<
+            targetArmPosition = -40 ;
+            targetTurretPosition = sharedHubTurretAngle ;
+            if (stopThread) break ;  // Make sure we stop for kill switch
+            // Drive to white line
+            DriveForTime(-10, 0.8, 0, 0.05) ;
+            targetIntakeState = 0; // Wait just a bit - to make sure we hold it.
+            //DriveForTime(-50, 1, 0, 0.3) ;  // TODO: Replace with distance sensor
+            DriveToWall(1, -70, leftDistance, 13, 1.2);
+            WallFollowToWhite(sharedHubBackupSpeed, -20, 2.9);
+            // At the line Get past pipes and strafe
+            //Wait(3) ; // TODO: DELETE THIS
+            Wait(0.3);
+            /*while (Math.abs(newTurret.getPosition() - targetTurretPosition) > 4) {
+                // Wait till the turret is in place
+            }*/
+            targetIntakeState = -0.7;
+            //DriveForTime(-10, 0.5, 0, 0.02);
+            Wait(0.3);
+            // >>>>>>>>>>>>>>> Deliver Complete <<<<<<<<<<<<<<<<<<<<
+            if (stopThread) break ;  // Make sure we stop for kill switch
+            targetIntakeState = 0 ;
+            targetArmPosition = 0 ;
+            targetTurretPosition = 0 ;
+            //DriveForTime(-120, 1, 0, 0.1);
+            Wait(0.2) ;
+            WallFollowToWhite(sharedHubBackupSpeed, -160, 1.1);
+            /*while (newArm.getPosition() < -5) {
+                // Wait till the arm is down
+                if (stopThread) break ;  // Make sure we stop for kill switch
+            }*/
+
+            DriveForTime(-170, 0.8, 0, 0.2);
+            loopCounter -= 1 ;
+            if (stopThread) break ;  // Make sure we stop for kill switch
+        }
+        targetIntakeState = 0 ;
+        autoDriveSpeed = 0.0 ;
+        autoDriveHeading = 0 ;
+    }
+
+    public void blueTeamHubDeliver() {
+        // =============  Intake until sensed ==============
+        int loopCounter = 1 ;
+        while (loopCounter > 0) {
+            // Get payload into position
+            targetArmPosition = 0;
+            targetTurretPosition = 0;
+            // Start intake
+            targetIntakeState = 1;
+            autoDriveSpeed = 0.3;
+            autoDriveHeading = 140;
+            int countDown = 1500;
+            while (!intakeTouchSensor.isPressed() & countDown > 0) {
+                countDown -= 1;
+                //autoDriveHeading -= 0.1 ;  // Turn a little to get a better intake position
+            }
+            autoDriveSpeed = 0;
+            autoDriveHeading = 0;
+            targetArmPosition = -75;
+            targetTurretPosition = 95;
+            // >>>>>>>>>>>>>> Intake Complete <<<<<<<<<<<<<<<<
+            // Drive to white line
+            DriveForTime(-10, 0.8, 0, 0.05) ;
+            targetIntakeState = 0;
+            DriveForTime(-40, 1, 0, 0.3) ;
+            WallFollowToWhite(colorBackupSpeed, -30, 2.5);
+            // At the line Get past pipes and strafe
+            DriveForTime(0, 1, 0, 0.2);
+            DriveForTime(85, 1, 0, 0.9);
+            targetIntakeState = -0.6;
+            Wait(0.4);
+            // >>>>>>>>>>>>>>> Deliver Complete <<<<<<<<<<<<<<<<<<<<
+            targetIntakeState = 0;
+            targetTurretPosition = 0;
+            targetArmPosition = 0;
+            //Wait(0.5) ;
+            DriveForTime(-105, 1, 0, 0.9);
+            WallFollowToWhite(colorBackupSpeed, -150, 2.5);
+            DriveForTime(170, 0.8, 0, 0.3);
+            loopCounter -= 1 ;
+        }
+    }
+
 
     public void testSequence2() {
         targetIntakeState = 0 ;
         targetTurretPosition = 0 ;
         targetArmPosition = 0 ;
         Wait(2) ;
-        targetArmPosition = -40 ;
+        targetArmPosition = ARM_TOP ;
+        WallFollowToWhite(colorBackupSpeed, -30, 1.5);
+        DriveForTime(-10, 0.8, 0, 0.3);
+        targetTurretPosition = 100 ;
         Wait(5) ;
-        targetTurretPosition = 90 ;
-        Wait(5) ;
+        targetArmPosition = 0 ;
+        targetTurretPosition = 0 ;
+        WallFollowToWhite(colorBackupSpeed, -150, 1.5);
+        DriveForTime(-170, 0.8, 0, 0.3);
+    }
+
+    public void jerkTestSequence1() {
+        targetIntakeState = 0 ;
+        targetTurretPosition = 0 ;
+        targetArmPosition = -35 ;
+        Wait(2) ;
+        //targetArmPosition = ARM_TOP ;
+        targetTurretPosition = 100 ;
+        Wait(4) ;
         targetTurretPosition  = 0 ;
-        Wait(5) ;
+        //targetArmPosition = 0 ;
+    }
+
+    public void jerkTestSequence2() {
+        targetIntakeState = 0 ;
+        targetTurretPosition = 0 ;
+        targetArmPosition = 0 ;
+        Wait(2) ;
+        targetArmPosition = -40 ;
+        targetTurretPosition = 0 ;
+        Wait(3) ;
+        targetTurretPosition  = 0 ;
         targetArmPosition = 0 ;
     }
 
-    public void fatherIsAFatWormThatWasLeftInTheSunForTooLong(){
-        //DriveForTime(0,-0.3,0,1);
-        targetIntakeState = 1;
-        autoDriveSpeed= -0.3;
-        autoDriveHeading= 0;
-        int countDown = 700;
-        while (!intakeTouchSensor.isPressed() & countDown>0) { countDown -= 1 ; }
-        autoDriveSpeed = 0;
-        targetArmPosition = -30;
-        targetIntakeState = 0;
-        DriveForTime(0,0.8,0,2);
-        targetTurretPosition = 90;
-        targetArmPosition = -80;
-        DriveForTime(90,0.5,0,1.5);
-        targetIntakeState = -1;
-        Wait(1);
-        targetIntakeState = 0;
+    public void servoMin() {
+        elementServo.setPosition(elementServoMin) ;
     }
 
-    public void letoPotato(){
-        targetIntakeState = 1;
-        autoDriveSpeed= -0.3;
-        autoDriveHeading= 0;
-        int countDown = 700;
-        while (!intakeTouchSensor.isPressed() & countDown>0) { countDown -= 1 ; }
-        autoDriveSpeed = 0;
-        targetArmPosition = -30;
-        targetIntakeState = 0;
-        DriveForTime(0,0.8,0,backupDistance);
-        targetTurretPosition = 90;
-        targetArmPosition = -70;
-        DriveForTime(90,0.5,0,strafeDistance);
-        targetIntakeState = -0.5;
-        Wait(1);
-        targetIntakeState = 0;
+    public void servoMid() {
+        elementServo.setPosition(elementServoMid) ;
     }
 
-    public void blueHubDeliver() {
-        // =============  Intake until sensed ==============
-        int loopCounter = 4 ;
-        while (loopCounter > 0) {
-            targetIntakeState = 1;
-            autoDriveSpeed = 0.4;
-            autoDriveHeading = 180;
-            int countDown = 700;
-            while (!intakeTouchSensor.isPressed() & countDown > 0) {
-                countDown -= 1;
-                //autoDriveHeading -= 0.1 ;
-            }
-            autoDriveSpeed = 0;
-            autoDriveHeading = 0;
-            targetArmPosition = -30;
-            targetIntakeState = 0;
-            // >>>>>>>>>>>>>> Intake Complete <<<<<<<<<<<<<<<<
-            // Drive to white line
-            DriveForTime(-10, 0.8, 0, 0.05) ;
-            DriveForTime(-40, 1, 0, 0.2) ;
-            WallFollowToWhite(colorBackupSpeed, -20, 1.5);
-            // At the line Get past pipes and strafe
-            targetTurretPosition = 90;
-            targetArmPosition = -75;
-            DriveForTime(0, 1, 0, 0.3);
-            DriveForTime(80, 1, 0, 0.8);
-            targetIntakeState = -0.4;
-            Wait(0.3);
-            // >>>>>>>>>>>>>>> Deliver Complete <<<<<<<<<<<<<<<<<<<<
-            targetIntakeState = 0;
-            // Drop freight
-            targetTurretPosition = 0;
-            targetArmPosition = -35;
-            Wait(0.5) ;
-            DriveForTime(-105, 1, 0, 0.9);
-            targetArmPosition = 0;
-            WallFollowToWhite(1, -160, 1);
-            DriveForTime(170, 0.8, 0, 0.3);
-            loopCounter -= 1 ;
-        }
+    public void servoMax() {
+        elementServo.setPosition(elementServoMax) ;
+    }
+
+
+    public void distanceTest() {
+        DriveToWall(0.7, -90, leftDistance, 10, 2.5);
     }
 
     public void lineTest() {
         WallFollowToWhite(colorBackupSpeed, -20, 2) ;
         DriveForTime(0, 1, 0, 0.3) ;
         DriveForTime(80, 1, 0, 0.8) ;
+    }
+
+    public void intakeTest() {
+        autoDriveSpeed = 0;
+        autoDriveHeading = 0;
+        targetIntakeState = 1;
+        //autoDriveSpeed = 0.4;
+        //autoDriveHeading = 180;
+        int countDown = 1500;
+        while (!intakeTouchSensor.isPressed() & countDown > 0) {
+            countDown -= 1;
+        }
+        targetArmPosition = -75;
+        Wait(2) ;
+        targetIntakeState = -1 ;
+        Wait(2) ;
+        targetIntakeState = 0 ;
+        targetArmPosition = 0 ;
     }
 
     public void ledSequence() {
@@ -325,19 +614,31 @@ public class ErasmusFreightFrenzy extends BaseRobot // implements Runnable
     //Wait for a period of time (seconds)
     public void Wait(double time) {
         double startTime = opMode.getRuntime();
-        while (IsTimeUp(startTime,time)){}
+        while (IsTimeUp(startTime,time)){
+            try {
+                Thread.sleep(25);
+            }
+            catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     //Drive for a period of time (speed on scale of 1 and time in seconds)
     public void DriveForTime(double angle, double speed, double turnOffset, double time){
         double startTime = opMode.getRuntime();
+        autoDriveHeading = angle ;
+        autoDriveSpeed = speed ;
+        autoTurnOffset = turnOffset ;
         while (IsTimeUp(startTime,time)) {
-            //chassis.RawDrive(angle,speed,turnOffset);
-            autoDriveHeading = angle ;
-            autoDriveSpeed = speed ;
-            autoTurnOffset = turnOffset ;
+
+            try {
+                Thread.sleep(10);
+            }
+            catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
-        //chassis.RawDrive(0,0,0);
         autoDriveHeading = 0 ;
         autoDriveSpeed = 0 ;
         autoTurnOffset = 0 ;
@@ -370,7 +671,14 @@ public class ErasmusFreightFrenzy extends BaseRobot // implements Runnable
         double startTime = opMode.getRuntime() ;
         autoDriveHeading = angle ;
         autoDriveSpeed = speed ;
-        while (colorSensor.alpha() < colorWhiteThreshold & IsTimeUp(startTime,time)) { }
+        while (colorSensor.alpha() < colorWhiteThreshold & IsTimeUp(startTime,time)) {
+            try {
+                Thread.sleep(25);
+            }
+            catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
         autoDriveSpeed = 0 ;
     }
 
@@ -383,7 +691,91 @@ public class ErasmusFreightFrenzy extends BaseRobot // implements Runnable
         }
     }
 
+    public void DriveToWall(double speed, double angle, DistanceSensor distSensor, double distance, double time)  {
+        double startTime = opMode.getRuntime() ;
+        autoDriveHeading = angle ;
+        autoDriveSpeed = speed ;
+        while (distSensor.getDistance(DistanceUnit.CM)>distance & IsTimeUp(startTime,time)) {
+            try {
+                Thread.sleep(10);
+            }
+            catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        autoDriveSpeed = 0 ;
+    }
 
+
+
+    public FreightFrenzyNavigator.DuckPos ScanBarcodeOpenCV() throws InterruptedException {
+        //get camera input and convert to mat
+        //divide image into three sections
+        //find section with most yellow
+        FreightFrenzyNavigator.DuckPos pos= FreightFrenzyNavigator.DuckPos.NULL;
+        opMode.telemetry.addData("Started scan", opMode.getRuntime());
+        Bitmap in = camera.GetImage();
+        in = camera.ShrinkBitmap(in,in.getWidth()/3,in.getHeight()/3);
+        Mat img = camera.convertBitmapToMat(in);
+
+        Rect firstRect = new Rect(0,0,img.width()/3,img.height());
+        Rect secondRect = new Rect(img.width()/3,0,img.width()/3,img.height());
+        Rect thirdRect = new Rect(2*img.width()/3,0,img.width()/3,img.height());
+
+        Mat firstMat = new Mat(img,firstRect);
+        Mat secondMat = new Mat(img,secondRect);
+        Mat thirdMat = new Mat(img,thirdRect);
+        //bgr lime(0,255,102)
+        Scalar max = new Scalar(max1,max2,max3);
+        Scalar min = new Scalar(min1,min2,min3);
+        firstMat = camera.isolateColor(firstMat,max,min);
+        secondMat = camera.isolateColor(secondMat,max,min);
+        thirdMat = camera.isolateColor(thirdMat,max,min);
+        Bitmap BigBit = camera.convertMatToBitMap(
+                camera.isolateColor(
+                        img
+                        ,max,min)
+        );
+
+
+        Bitmap first = camera.convertMatToBitMap(firstMat);
+        Bitmap second = camera.convertMatToBitMap(secondMat);
+        Bitmap third = camera.convertMatToBitMap(thirdMat);
+
+        //FtcDashboard.getInstance().sendImage(first);
+        //FtcDashboard.getInstance().sendImage(second);
+        //FtcDashboard.getInstance().sendImage(third);
+        FtcDashboard.getInstance().sendImage(BigBit);
+
+        double pixelsFirst = camera.countPixels(first);
+        double pixelsSecond = camera.countPixels(second);
+        double pixelsThird = camera.countPixels(third);
+
+        opMode.telemetry.addData("Pixel Count 1",pixelsFirst);
+        opMode.telemetry.addData("Pixel Count 2",pixelsSecond);
+        opMode.telemetry.addData("Pixel Count 3",pixelsThird);
+
+
+        if(pixelsFirst>pixelsSecond&&pixelsFirst>pixelsThird){
+            pos= FreightFrenzyNavigator.DuckPos.FIRST;
+            opMode.telemetry.addData("Element in position","1");
+        }
+        else if(pixelsSecond>pixelsFirst&&pixelsSecond>pixelsThird){
+            pos= FreightFrenzyNavigator.DuckPos.SECOND;
+            opMode.telemetry.addData("Element in position","2");
+        }
+        else if(pixelsThird>pixelsSecond&&pixelsThird>pixelsFirst){
+            pos= FreightFrenzyNavigator.DuckPos.THIRD;
+            opMode.telemetry.addData("Element in position","3");
+        }
+        else if(pos== FreightFrenzyNavigator.DuckPos.NULL) {
+            opMode.telemetry.addData("Element in position", "null");
+        }
+        opMode.telemetry.addData("Scan Done!", opMode.getRuntime());
+        // TODO: Remove after playing around with this!!!!
+        //opMode.telemetry.update();
+        return pos;
+    }
 
     //public ErasmusPayload payload(){return payload;}
     //public EncoderActuator Turret(){return payload.turret;}

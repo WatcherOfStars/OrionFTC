@@ -1,9 +1,12 @@
 package org.firstinspires.ftc.teamcode._RobotCode.Erasmus;
 
 import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.Core.InputSystem.ControllerInput;
 import org.firstinspires.ftc.teamcode.Core.InputSystem.ControllerInputListener;
 import org.firstinspires.ftc.teamcode.Core.InputSystem.ControllerInput.Button;
@@ -27,7 +30,7 @@ public class ErasmusTeleop extends OpMode implements ControllerInputListener
     ////Variables////
     //Tweaking Vars
     public static double driveSpeed = 1 ; //used to change how fast robot drives
-    public static double turnSpeed = 0.5 ; //used to change how fast robot turns
+    public static double turnSpeed = 0.8 ; //used to change how fast robot turns
 
     public static double turnP = 0.005;  // 0.005
     public static double turnI = 0.0;
@@ -39,7 +42,7 @@ public class ErasmusTeleop extends OpMode implements ControllerInputListener
     // Temporary for testing
     PIDFCoefficients pidOrig ;
     public static int payloadControllerNumber = 1;
-
+    MultipleTelemetry dashboardTelemetry ;
 
     @Override
     public void init() {
@@ -86,6 +89,12 @@ public class ErasmusTeleop extends OpMode implements ControllerInputListener
 
         //KILL SWITCH FOR NAVIGATOR
         if(gamepad1.right_trigger > 0.1 && gamepad1.left_trigger > 0.1) {
+            myTestThread.interrupt() ;
+            robot.targetTurretPosition = 0 ;
+            robot.targetArmPosition=-35 ;
+            robot.autoDriveSpeed = 0 ;
+            robot.autoDriveHeading = 0 ;
+            robot.stopThread = true ;
             //robot.navigation.StopNavigator();
             //if(robot.USE_PAYLOAD) robot.TurretArm().StopArmThread();
             //if(robot.USE_PAYLOAD) robot.blinkinController.Lime();
@@ -124,15 +133,28 @@ public class ErasmusTeleop extends OpMode implements ControllerInputListener
             //control.GetOrion().PrintTensorflowTelemetry();
         }
 
-        telemetry.addData("Turret Target=  ", Math.round(robot.targetTurretPosition)) ;
-        telemetry.addData("Turret Heading= ", Math.round(robot.newTurret.getPosition())) ;
-        telemetry.addData("Arm Target=     ", robot.targetArmPosition) ;
+        telemetry.addData("Right Distance= ", robot.rightDistance.getDistance(DistanceUnit.CM) ) ;
+        telemetry.addData("Left Distance=  ", robot.leftDistance.getDistance(DistanceUnit.CM) ) ;
+        telemetry.addData("Front Distance= ", robot.frontDistance.getDistance(DistanceUnit.CM) ) ;
+        telemetry.addData("Rear Distance=  ", robot.rearDistance.getDistance(DistanceUnit.CM) ) ;
+        //telemetry.addData("Turret Target=  ", Math.round(robot.targetTurretPosition)) ;
+        telemetry.addData("Turret Actual=  ", robot.newTurret.getPosition()) ;
+        //telemetry.addData("Turret Error =  ", robot.newTurret.error) ;
+        //telemetry.addData("Turret Dist  =  ", robot.newTurret.distance) ;
+        telemetry.addData("Turret Motor =  ", robot.newTurret.motor.getPower()) ;
+        //telemetry.addData("Turret Mode  =  ", robot.newTurret.motor.getMode()) ;
+        //telemetry.addData("Arm Target=     ", robot.targetArmPosition) ;
+        telemetry.addData("Arm Actual=     ", robot.newArm.getPosition()) ;
+        //telemetry.addData("Arm Dist     =  ", robot.newArm.distance) ;
+        //telemetry.addData("Arm Error =     ", robot.newArm.error) ;
         telemetry.addData("Color Sensor=   ", robot.colorSensor.alpha()) ;
-        telemetry.addData("Touch Sensor=   ", robot.intakeTouchSensor.isPressed()) ;
-        telemetry.addData("Target Angle=   ", robot.targetRobotAngle) ;
-        telemetry.addData("Robot Angle=    ", robot.chassis.GetImu().GetRobotAngle()) ;
+        //telemetry.addData("Touch Sensor=   ", robot.intakeTouchSensor.isPressed()) ;
+        //telemetry.addData("Target Angle=   ", robot.targetRobotAngle) ;
+        telemetry.addData("Robot Heading=  ", robot.chassis.GetImu().GetRobotAngle()) ;
         telemetry.update();
+
     }
+
 
     @Override
     public void stop(){
@@ -149,14 +171,12 @@ public class ErasmusTeleop extends OpMode implements ControllerInputListener
                 if (speedMultiplier == 1) speedMultiplier = 0.5;
                 else speedMultiplier = 1; }
             if(button == Button.B);
-            //if(button == Button.X && robot.USE_PAYLOAD) robot.TurretArm().ReturnToHomeAndIntake(); //TODO: revert to resetAndIntake()
-            //if(button == Button.Y && robot.USE_PAYLOAD) robot.TurretArm().CycleIntakeState(1);
             //Bumpers
-            if(button == Button.LB);
-            if(button == Button.RB);
+            if(button == Button.LB && robot.USE_PAYLOAD) { }
+            if(button == Button.RB && robot.USE_PAYLOAD) { }
             //Triggers
-            if(button == Button.LT);
-            if(button == Button.RT);
+            if(button == Button.LT && robot.USE_PAYLOAD) { }
+            if(button == Button.RT && robot.USE_PAYLOAD) { }
             //Dpad
             if(button == Button.DUP && robot.USE_PAYLOAD){
                 //robot.newIntake.setIn() ;
@@ -205,17 +225,20 @@ public class ErasmusTeleop extends OpMode implements ControllerInputListener
             if(button == Button.Y);
             //Bumpers
             if(button == Button.LB && robot.USE_PAYLOAD) {
-                robot.targetTurretPosition -= 2 ;
+                robot.newTurret.useBrake=false ;
+                robot.targetTurretPosition -= 1 ;
             }
             if(button == Button.RB && robot.USE_PAYLOAD) {
-                robot.targetTurretPosition += 2 ;
+                robot.newTurret.useBrake=false ;
+                robot.targetTurretPosition += 1 ;
             }
             //Triggers
-            //if(button == Button.LT && robot.USE_PAYLOAD) robot.Arm().SetPowerClamped(1);
             if(button == Button.LT && robot.USE_PAYLOAD) {
+                robot.newArm.useBrake=false ;
                 robot.targetArmPosition -= 1 ;
-            } // Down
+            }
             if(button == Button.RT && robot.USE_PAYLOAD) {
+                robot.newArm.useBrake=false ;
                 robot.targetArmPosition += 1 ;
             }
             //Dpad
@@ -279,29 +302,40 @@ public class ErasmusTeleop extends OpMode implements ControllerInputListener
             //Colored buttons
             if(button == Button.A);
             if(button == Button.B) {
-                //robot.targetTurretPosition = 90 ;
-                Runnable runnable = () -> { robot.testSequence2(); };
+                //Runnable runnable = () -> { robot.testSequence2(); } ;
+                Runnable runnable = () -> { robot.servoMin(); } ;
                 myTestThread = new Thread(runnable) ;
                 myTestThread.start() ;
             }
             if(button == Button.X) {
-                myTestThread.interrupt() ;
-                robot.targetTurretPosition = 0 ;
-                robot.targetArmPosition=-35 ;
-                robot.autoDriveSpeed = 0 ;
-                robot.autoDriveHeading = 0 ;
+                //Runnable runnable = () -> { robot.jerkTestSequence2() ; } ;
+                Runnable runnable = () -> { robot.servoMax(); } ;
+                myTestThread = new Thread(runnable) ;
+                myTestThread.start() ;
             }
-            if(button == Button.Y);
+            if(button == Button.Y) {
+                //Runnable runnable = () -> { robot.servoMid(); } ;
+                Runnable runnable = () -> { robot.servoMid(); } ;
+                myTestThread = new Thread(runnable) ;
+                myTestThread.start() ;
+            }
             //Bumpers
-            //if(button == Button.LB && robot.USE_PAYLOAD) robot.newTurret.rawTurn(0) ;
-            //if(button == Button.RB && robot.USE_PAYLOAD) robot.newTurret.rawTurn(0) ;
+            if(button == Button.LB && robot.USE_PAYLOAD) robot.newTurret.useBrake=true ;
+            if(button == Button.RB && robot.USE_PAYLOAD) robot.newTurret.useBrake=true ;
             //Triggers
-            //if(button == Button.LT && robot.USE_PAYLOAD) robot.Arm().SetPowerRaw(0);
-            //if(button == Button.RT && robot.USE_PAYLOAD) robot.Arm().SetPowerRaw(0);
+            if(button == Button.LT && robot.USE_PAYLOAD) robot.newArm.useBrake=true ;
+            if(button == Button.RT && robot.USE_PAYLOAD) robot.newArm.useBrake=true ;
             //Dpad
             if(button == Button.DUP);
             if(button == Button.DDOWN) {
-                robot.targetIntakeState = 0 ;
+                if (myTestThread != null) {
+                    myTestThread.interrupt() ;
+                }
+                robot.stopThread = true ;
+                Runnable runnable = () -> { robot.resetSequence() ; } ;
+                myTestThread = new Thread(runnable) ;
+                myTestThread.start() ;
+                robot.stopThread = false ;
             }
             if(button == Button.DLEFT) {
                 robot.targetIntakeState = 1 ;
