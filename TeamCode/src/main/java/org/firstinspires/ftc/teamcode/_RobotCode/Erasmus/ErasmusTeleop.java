@@ -226,11 +226,11 @@ public class ErasmusTeleop extends OpMode implements ControllerInputListener
             //Bumpers
             if(button == Button.LB && robot.USE_PAYLOAD) {
                 robot.newTurret.useBrake=false ;
-                robot.targetTurretPosition -= 1 ;
+                robot.targetTurretPosition -= 2 ;
             }
             if(button == Button.RB && robot.USE_PAYLOAD) {
                 robot.newTurret.useBrake=false ;
-                robot.targetTurretPosition += 1 ;
+                robot.targetTurretPosition += 2 ;
             }
             //Triggers
             if(button == Button.LT && robot.USE_PAYLOAD) {
@@ -303,19 +303,19 @@ public class ErasmusTeleop extends OpMode implements ControllerInputListener
             if(button == Button.A);
             if(button == Button.B) {
                 //Runnable runnable = () -> { robot.testSequence2(); } ;
-                Runnable runnable = () -> { robot.servoMin(); } ;
+                Runnable runnable = () -> { robot.testSequence2(); } ;
                 myTestThread = new Thread(runnable) ;
                 myTestThread.start() ;
             }
             if(button == Button.X) {
                 //Runnable runnable = () -> { robot.jerkTestSequence2() ; } ;
-                Runnable runnable = () -> { robot.servoMax(); } ;
+                Runnable runnable = () -> { robot.redSharedHubDeliver(); } ;
                 myTestThread = new Thread(runnable) ;
                 myTestThread.start() ;
             }
             if(button == Button.Y) {
                 //Runnable runnable = () -> { robot.servoMid(); } ;
-                Runnable runnable = () -> { robot.servoMid(); } ;
+                Runnable runnable = () -> { robot.jerkTestSequence2(); } ;
                 myTestThread = new Thread(runnable) ;
                 myTestThread.start() ;
             }
@@ -326,16 +326,18 @@ public class ErasmusTeleop extends OpMode implements ControllerInputListener
             if(button == Button.LT && robot.USE_PAYLOAD) robot.newArm.useBrake=true ;
             if(button == Button.RT && robot.USE_PAYLOAD) robot.newArm.useBrake=true ;
             //Dpad
-            if(button == Button.DUP);
+            if(button == Button.DUP) {
+                Runnable runnable = () -> { robot.capSequence(); } ;
+                myTestThread = new Thread(runnable) ;
+                myTestThread.start() ;
+            }
             if(button == Button.DDOWN) {
                 if (myTestThread != null) {
                     myTestThread.interrupt() ;
                 }
-                robot.stopThread = true ;
                 Runnable runnable = () -> { robot.resetSequence() ; } ;
                 myTestThread = new Thread(runnable) ;
                 myTestThread.start() ;
-                robot.stopThread = false ;
             }
             if(button == Button.DLEFT) {
                 robot.targetIntakeState = 1 ;

@@ -63,7 +63,7 @@ public class DcEncoderActuator {
 
 
     // Use simple RUN_TO_POSITION to use encoder to turn
-    // Very significant OVERSHOOT = unusable
+    // Very significant OVERSHOOT = unusable. Tried MANY times :(
     public void setTargetEncoder( double targetDegrees ) {
         if (!useBrake) {
             error = targetDegrees - getPosition() ;
@@ -71,8 +71,6 @@ public class DcEncoderActuator {
             motor.setPower(clamp((manualPower* motorPower*error/10),-1,1));
             motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         }
-
-
         else if (motor.getMode()!=DcMotor.RunMode.RUN_TO_POSITION) {
             motor.setTargetPosition((int) (degreesToTicks(targetDegrees))) ;
             motor.setPower(motorPower*encoderPower) ;
@@ -86,7 +84,8 @@ public class DcEncoderActuator {
         }
     }
 
-    //  ============ Linear ramp ============================================================
+    //  ============ No proportional - full power ============================================================
+    // WAY TO MUCH shaking after releasing manual power
     public void setTargetStraight( double targetDegrees ) {
         error = targetDegrees - getPosition() ;
         if (Math.abs(error)<encoderPoint) {
@@ -96,8 +95,8 @@ public class DcEncoderActuator {
         else if (!useBrake) {
             //motor.setPower(clamp((Math.signum(error)*manualPower* motorPower),-1,1));
             motor.setPower(clamp((manualPower* motorPower*error/10),-1,1));
-            motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            previousTargetDegrees = targetDegrees ;  // TODO: Need this???
+            //motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            //previousTargetDegrees = targetDegrees ;  // TODO: Need this???
         }
         // ================ If not the above, we have to ramp up and down =========================
         else {
@@ -108,7 +107,7 @@ public class DcEncoderActuator {
 
 
     //  ==============================================================================
-    public void setTarget( double targetDegrees ) {
+    public void setTargetSin( double targetDegrees ) {
         error = targetDegrees - getPosition() ;
 
         // ======================= Manual input =======================
@@ -118,7 +117,7 @@ public class DcEncoderActuator {
             motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
             previousTargetDegrees = targetDegrees ;  // TODO: Need this???
         }
-        else if (Math.abs(error)<encoderPoint) {
+        else if (Math.abs(error) < encoderPoint) {
             motor.setPower(0) ;
         }// ================ If not the above, we have to ramp up and down =========================
         else {
@@ -136,7 +135,8 @@ public class DcEncoderActuator {
 
 
     //  ==============================================================================
-    public void setTargetComplex( double targetDegrees ) {
+    // Complex method, but seems to work well
+    public void setTarget( double targetDegrees ) {
         error = targetDegrees - getPosition() ;
 
         // ======================= Manual input =======================
@@ -146,16 +146,20 @@ public class DcEncoderActuator {
             motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
             previousTargetDegrees = targetDegrees ;  // TODO: Need this???
         }
-
         // ================= If we're close and we're braking (no manual input) ======================
         else if (Math.abs(error)<encoderPoint & useBrake) {
             if (!(motor.getMode()==DcMotor.RunMode.RUN_TO_POSITION & motor.getTargetPosition()==(int) (degreesToTicks(targetDegrees)))) {
                 motor.setPower(0) ;
+                try {
+                    Thread.sleep(25);
+                }
+                catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
                 motor.setTargetPosition((int) (degreesToTicks(targetDegrees))) ;
                 /*if (motor.getTargetPosition()!=degreesToTicks(targetDegrees)) {
                     motor.setTargetPosition((int) (degreesToTicks(targetDegrees)));
                 }
-
                  */
                 motor.setPower(motorPower*encoderPower) ;  // TODO: Try straight power.
                 // motor.setPower(motorPower*encoderPower*error/encoderPoint) ;  // TODO: Try adding P to correction. May smooth the transition.
@@ -167,7 +171,6 @@ public class DcEncoderActuator {
             //else motor.setPower(motorPower*encoderPower*error/encoderPoint) ;  // TODO: Try adding P to correction. May smooth the transition.
             //else motor.setPower(motorPower*encoderPower) ;  // TODO: Try straight power.
         }
-
         // ================ If not the above, we have to ramp up and down =========================
         else {
             if (previousTargetDegrees != targetDegrees) {
@@ -177,9 +180,7 @@ public class DcEncoderActuator {
             }
             motor.setPower(clamp((Math.signum(error) * speedOffset) + (Math.sin(clamp(error * 3.0 / distance, -3.0, 3.0) * motorPower)), -1, 1)) ;
             motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
         }
-
     }
 
     //========================================================================

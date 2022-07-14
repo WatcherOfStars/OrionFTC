@@ -58,7 +58,7 @@ public class ErasmusFreightFrenzy extends BaseRobot // implements Runnable
     public static int colorWhiteThreshold = 800 ;  // for V2 sensor
 
     public static double colorBackupSpeed = 0.9 ;
-    public static double sharedHubBackupSpeed = 0.7 ;
+    public static double sharedHubBackupSpeed = 0.6 ;
     public static double sharedHubTurretAngle = 110 ;
 
     // NEW Servo Turret =====================================
@@ -66,18 +66,18 @@ public class ErasmusFreightFrenzy extends BaseRobot // implements Runnable
     // NEW Rev Hex Core Turret =====================================
     public DcEncoderActuator newTurret ;
     public static double turretResolution = 3.22 ;
-    public static double turretSpeed = 0.9 ;
-    public static double turretEncoderPoint  = 2.2 ;
+    public static double turretSpeed = 1 ;
+    public static double turretEncoderPoint  = 4.2 ;
     public static double turretManualPower = 1 ;
-    public static double turretEncoderPower = 0.1 ;
+    public static double turretEncoderPower = 1 ;
     public static double turretOffset = 0.15 ;
     // NEW DC Motor Arm======================================
     public DcEncoderActuator newArm ;
     public static double armPower = 0.9 ;
-    public static double armEncoderPoint  = 1.2 ;
-    public static double armManualPower = 0.7 ;
-    public static double armEncoderPower = 0.1 ;
-    public static double armOffset = 0.25 ;
+    public static double armEncoderPoint  = 4.2 ;
+    public static double armManualPower = 1 ;
+    public static double armEncoderPower = 1 ;
+    public static double armOffset = 0.15 ;
     public static double ARM_TOP = -78 ;
     public static double ARM_MIDDLE = -45 ;
     public static double ARM_BOTTOM = -32 ;
@@ -92,8 +92,9 @@ public class ErasmusFreightFrenzy extends BaseRobot // implements Runnable
     // Element Gripper  =====================================
     public Servo elementServo ;
     public static double elementServoMin = 0 ;
-    public static double elementServoMid = 0.3 ;
-    public static double elementServoMax = 0.45 ;
+    public static double elementServoMid = 0.35 ;
+    public static double elementServoMax = 0.62 ;
+    public static double capHeight = -78 ;
     // NEW Sensors ==========================================
     ColorSensor colorSensor ;
     TouchSensor intakeTouchSensor ;
@@ -419,7 +420,7 @@ public class ErasmusFreightFrenzy extends BaseRobot // implements Runnable
             autoDriveSpeed = 0 ;
             autoDriveHeading = 0 ;
             // >>>>>>>>>>>>>> Intake Complete <<<<<<<<<<<<<<<<
-            targetArmPosition = -40 ;
+            targetArmPosition = -35 ;
             targetTurretPosition = sharedHubTurretAngle ;
             if (stopThread) break ;  // Make sure we stop for kill switch
             // Drive to white line
@@ -430,13 +431,13 @@ public class ErasmusFreightFrenzy extends BaseRobot // implements Runnable
             WallFollowToWhite(sharedHubBackupSpeed, -20, 2.9);
             // At the line Get past pipes and strafe
             //Wait(3) ; // TODO: DELETE THIS
-            Wait(0.3);
+            Wait(0.4) ;
             /*while (Math.abs(newTurret.getPosition() - targetTurretPosition) > 4) {
                 // Wait till the turret is in place
             }*/
             targetIntakeState = -0.7;
             //DriveForTime(-10, 0.5, 0, 0.02);
-            Wait(0.3);
+            Wait(0.4);
             // >>>>>>>>>>>>>>> Deliver Complete <<<<<<<<<<<<<<<<<<<<
             if (stopThread) break ;  // Make sure we stop for kill switch
             targetIntakeState = 0 ;
@@ -553,6 +554,14 @@ public class ErasmusFreightFrenzy extends BaseRobot // implements Runnable
 
     public void servoMax() {
         elementServo.setPosition(elementServoMax) ;
+    }
+
+    public void capSequence() {
+        // Grabber is closed on capping element
+        targetArmPosition = capHeight ;
+        targetTurretPosition = -90 ;
+        Wait(2) ;
+        //elementServo.setPosition(elementServoMid) ;
     }
 
 
