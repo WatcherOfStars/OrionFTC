@@ -23,14 +23,14 @@ public class CuriosityAutonomousSketchpad extends LinearOpMode
       nav = robot.navigation;
       robot.Init();
 
-      waitForStart();
-      robot.Start();
-      nav.side = side;
+      waitForStart() ;
+      robot.Start() ;
+      nav.side = side ;
 
       robot.TurretArm().ReturnToHomeAndIntakeWithSensor();
       while (!isStopRequested()){
-         robot.Update();
-         telemetry.update();
+         robot.Update() ;
+         telemetry.update() ;
       }
    }
 }

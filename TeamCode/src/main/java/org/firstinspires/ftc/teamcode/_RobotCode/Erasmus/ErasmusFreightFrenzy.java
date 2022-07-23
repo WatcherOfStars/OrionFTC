@@ -51,13 +51,14 @@ public class ErasmusFreightFrenzy extends BaseRobot // implements Runnable
     public static double armTop ;
     public DigitalChannel ledRed ;
     public DigitalChannel ledGreen ;
+    public enum LIGHTS { GREEN, RED, ORANGE, OFF}
 
     public static double backupDistance = 1.5 ;
     public static double strafeDistance = 1.3 ;
     //public static int colorWhiteThreshold = 90 ;  // for V3 sensor
     public static int colorWhiteThreshold = 800 ;  // for V2 sensor
 
-    public static double colorBackupSpeed = 0.9 ;
+    public static double colorBackupSpeed = 0.8 ;
     public static double sharedHubBackupSpeed = 0.6 ;
     public static double sharedHubTurretAngle = 110 ;
 
@@ -67,17 +68,17 @@ public class ErasmusFreightFrenzy extends BaseRobot // implements Runnable
     public DcEncoderActuator newTurret ;
     public static double turretResolution = 3.22 ;
     public static double turretSpeed = 1 ;
-    public static double turretEncoderPoint  = 4.2 ;
+    public static double turretEncoderPoint  = 15.2 ;
     public static double turretManualPower = 1 ;
     public static double turretEncoderPower = 1 ;
-    public static double turretOffset = 0.15 ;
+    public static double turretOffset = 0.25 ;
     // NEW DC Motor Arm======================================
     public DcEncoderActuator newArm ;
-    public static double armPower = 0.9 ;
-    public static double armEncoderPoint  = 4.2 ;
+    public static double armPower = 1 ;
+    public static double armEncoderPoint  = 6.2 ;
     public static double armManualPower = 1 ;
     public static double armEncoderPower = 1 ;
-    public static double armOffset = 0.15 ;
+    public static double armOffset = 0.35 ;
     public static double ARM_TOP = -78 ;
     public static double ARM_MIDDLE = -45 ;
     public static double ARM_BOTTOM = -32 ;
@@ -163,8 +164,6 @@ public class ErasmusFreightFrenzy extends BaseRobot // implements Runnable
             camera = new Camera(opMode,"Webcam 1");
 
         }
-
-        // Ignore USE_NAVIGATOR. We are going to attempt to combine it within this very class.
     }
 
     public void run(){ }  // For multithreading
@@ -246,7 +245,7 @@ public class ErasmusFreightFrenzy extends BaseRobot // implements Runnable
         double currentTurretPosition = newTurret.getPosition() ;
         double currentArmPosition = newArm.getPosition() ;
         // Intake Zone
-        if (currentTurretPosition<3.5 & currentTurretPosition>-3.5) {
+        if ((currentTurretPosition<3.5 & currentTurretPosition>-3.5)| currentArmPosition>=targetArmPosition) {
             newArm.setTarget(targetArmPosition) ;
             if (currentArmPosition<-31 ) {
                 newTurret.setTarget(targetTurretPosition) ;
@@ -255,18 +254,13 @@ public class ErasmusFreightFrenzy extends BaseRobot // implements Runnable
         }
         // Side Zones
         else {
-            if (targetArmPosition>-32) {
+            if (targetArmPosition>-32 & targetArmPosition> currentArmPosition) {
                 newArm.setTarget(-33) ;
             }
             else newArm.setTarget(targetArmPosition) ;
-            if (currentArmPosition<100) { // TODO: Review this (skipping the else right now
-                newTurret.setTarget(targetTurretPosition) ;
-            }
-            else newTurret.setTarget(currentTurretPosition) ;
+            newTurret.setTarget(targetTurretPosition) ;
         }
     }
-
-
 
     public void resetSequence() {
         targetIntakeState = 0 ;
@@ -277,9 +271,75 @@ public class ErasmusFreightFrenzy extends BaseRobot // implements Runnable
         targetTurretPosition = 0 ;
     }
 
+    public void testAutonomous() {
+        double cutoffTime = opMode.getRuntime()+23 ; // Use this to decide when to stop and park
+        targetArmPosition = -45 ;
+        targetTurretPosition = -97 ;
+        // Read bar code
+        FreightFrenzyNavigator.DuckPos barcodePosition = null ;
+        try {barcodePosition = ScanBarcodeOpenCV();} catch(Exception e){ barcodePosition = null ;}
+        // Raise / lower arm to bar code position
+        double levelDistance = 45 ;
+        switch (barcodePosition) {
+            case FIRST:
+                targetArmPosition = ARM_BOTTOM ;
+                levelDistance = 60 ;
+                ledSet(LIGHTS.RED) ;
+                break ;
+            case SECOND:
+                targetArmPosition = ARM_MIDDLE ;
+                levelDistance = 50 ;
+                ledSet(LIGHTS.ORANGE) ;
+                break ;
+            default:
+                targetArmPosition = ARM_TOP ;
+                levelDistance = 40 ;
+                ledSet(LIGHTS.GREEN) ;
+                break ;
+        }
+        Wait(0.1) ; // Need a little extra to bring the arm up
+        // Drive to deliver position
+        DriveFromWall(0.9, -65, rightDistance, levelDistance, 2) ;
+        Wait(0.2) ;
+        // Release freight
+        targetIntakeState = -0.5 ;
+        newIntake.runIntake(-0.5) ;
+        Wait(0.4) ;
+        targetTurretPosition = 0 ;
+        targetArmPosition = -33 ;
+        targetIntakeState = 0 ;
+        DriveToWallProportional(0.8, 110, rightDistance, 14, 1.5) ;
+        Wait(0.2) ;
+        targetArmPosition = 0 ;
+        WallFollowToWhite(colorBackupSpeed, 150, 1.0) ;
+
+        // ------------------ Intake/Delivery Loop --------------------------
+        int loopCounter = 1 ;
+        while (loopCounter > 0 && opMode.getRuntime()<cutoffTime) {
+            // ================== INTAKING =================
+            targetArmPosition = 0 ;
+            targetTurretPosition = 0 ;
+            targetIntakeState = 1 ;
+            autoDriveSpeed = 0.25 ;
+            autoDriveHeading = -155 ;
+            int countDown = 1200 ;
+            while (!intakeTouchSensor.isPressed() & countDown > 0) { countDown -= 1; } // Wait for intake
+            // ================ DELIVERING ====================
+            autoDriveSpeed = 0;
+            autoDriveHeading = 0;
+            targetArmPosition = ARM_TOP;
+            targetTurretPosition = -110;
+
+            loopCounter -= 1 ;
+        }
+        targetIntakeState = 0 ;
+
+    }
+
 
     public void redAutonomous() {
-        double cutoffTime = opMode.getRuntime()+23 ;
+        double cutoffTime = opMode.getRuntime()+23 ; // Use this to decide when to stop and park
+        // ================= DETECTING ==================
         // Move arm to staging position
         targetArmPosition = -45 ;
         targetTurretPosition = -110 ;
@@ -290,72 +350,89 @@ public class ErasmusFreightFrenzy extends BaseRobot // implements Runnable
         switch (barcodePosition) {
             case FIRST:
                 targetArmPosition = ARM_BOTTOM ;
+                ledSet(LIGHTS.RED) ;
                 break ;
             case SECOND:
                 targetArmPosition = ARM_MIDDLE ;
+                ledSet(LIGHTS.ORANGE) ;
                 break ;
             default:
                 targetArmPosition = ARM_TOP ;
+                ledSet(LIGHTS.GREEN) ;
                 break ;
         }
-        Wait(0.2) ;
         // Drive to deliver position
-        DriveForTime(-65, 1, 0, 0.85) ;
+        DriveForTime(-65, 1, 0, 0.86) ;  // Drive out to hub
+        Wait(0.4) ;
         // Release freight
         targetIntakeState = -0.5 ;
+        newIntake.runIntake(-0.5) ;
         Wait(0.3) ;
         targetTurretPosition = 0 ;
-        DriveForTime(100, 1, 0, 0.3) ;
-        // Go back to the wall
         targetArmPosition = 0 ;
         targetIntakeState = 0 ;
-        DriveForTime(115, 1, 0, 0.6) ;
+        DriveToWall(1, 115, rightDistance, 12, 0.9) ;
         // Drive into warehouse to start loop
-        WallFollowToWhite(colorBackupSpeed, 150, 1.5);
-        DriveForTime(170, 1, 0, 0.1);
-        // Delivery Loop =================================
+        Wait(0.3) ;
+        WallFollowToWhite(colorBackupSpeed, 160, 1.5) ;
+        while (newArm.getPosition()< -5) {
+            try { Thread.sleep(25) ; }
+            catch (InterruptedException e) { e.printStackTrace() ; }
+        }
+        DriveForTime(170, 1, 0, 0.05) ;
+        // ======================== Delivery Loop =================================
         int loopCounter = 4 ;
         while (loopCounter > 0 && opMode.getRuntime()<cutoffTime) {
+            // ================== INTAKING =================
             // Get payload into position
             targetArmPosition = 0;
             targetTurretPosition = 0;
+
             // Start intake
             targetIntakeState = 1;
             autoDriveSpeed = 0.35;
-            autoDriveHeading = -140 ;
+            autoDriveHeading = -155 ;
             int countDown = 1200;
             while (!intakeTouchSensor.isPressed() & countDown > 0) {
                 countDown -= 1;
                 //autoDriveHeading -= 0.1 ;  // Turn a little to get a better intake position
             }
+            // ================ DELIVERING ====================
             autoDriveSpeed = 0;
             autoDriveHeading = 0;
             targetArmPosition = ARM_TOP;
             targetTurretPosition = -110;
-            // >>>>>>>>>>>>>> Intake Complete <<<<<<<<<<<<<<<<
             // Drive to white line
             DriveForTime(10, 0.8, 0, 0.05) ;
             targetIntakeState = 0;
-            DriveForTime(50, 1, 0, 0.3) ;
-            WallFollowToWhite(colorBackupSpeed, 30, 2.0);
-            // At the line Get past pipes and strafe
-            DriveForTime(0, 1, 0, 0.1);
-            DriveForTime(-75, 1, 0, 0.85);
-            targetIntakeState = -0.5;
-            Wait(0.4);
+            //DriveForTime(50, 1, 0, 0.3) ;  // TODO: Change to DriveToWall
+            DriveToWall(1, 50, rightDistance, 12, 0.4);
+            WallFollowToWhite(colorBackupSpeed, 20, 2.5) ;  // At the line Get past pipes and strafe
+            DriveForTime(0, 1, 0, 0.1);  // Get past the line
+            //Wait(0.2);
+            DriveForTime(-65, 1, 0, 0.75);  // Strafe out to the hub
+            Wait(0.3);
+            targetIntakeState = -0.5;  // Release
+            newIntake.runIntake(-0.5) ;
+            Wait(0.3);
+            // =================== RETURNING ========================
             targetTurretPosition = 0;
-            DriveForTime(100, 1, 0, 0.3) ;
-            // >>>>>>>>>>>>>>> Deliver Complete <<<<<<<<<<<<<<<<<<<<
+            //DriveForTime(100, 1, 0, 0.3) ;  // TODO: Change ???
             targetIntakeState = 0;
             targetArmPosition = 0;
             //Wait(0.5) ;
-            DriveForTime(115, 1, 0, 0.7);
-            WallFollowToWhite(colorBackupSpeed, 150, 1);
-            DriveForTime(170, 1, 0, 0.1);
+            //DriveForTime(115, 1, 0, 0.85);  // TODO: Change to DriveToWall
+            DriveToWall(1, 115, rightDistance, 12, 0.9);
+            Wait(0.2);
+            WallFollowToWhite(colorBackupSpeed-0.1, 160, 1);
+            while (newArm.getPosition()< -5) {
+                try { Thread.sleep(25); }
+                catch (InterruptedException e) { e.printStackTrace(); }
+            }
             loopCounter -= 1 ;
         }
-        DriveForTime(170, 1, 0, 0.2);
-
+        DriveForTime(170, 1, 0, 0.3);
+        ledSet(LIGHTS.OFF) ;
     }
 
     public void redTeamHubDeliver() {
@@ -426,12 +503,10 @@ public class ErasmusFreightFrenzy extends BaseRobot // implements Runnable
             // Drive to white line
             DriveForTime(-10, 0.8, 0, 0.05) ;
             targetIntakeState = 0; // Wait just a bit - to make sure we hold it.
-            //DriveForTime(-50, 1, 0, 0.3) ;  // TODO: Replace with distance sensor
             DriveToWall(1, -70, leftDistance, 13, 1.2);
             WallFollowToWhite(sharedHubBackupSpeed, -20, 2.9);
             // At the line Get past pipes and strafe
-            //Wait(3) ; // TODO: DELETE THIS
-            Wait(0.4) ;
+            Wait(0.5) ;
             /*while (Math.abs(newTurret.getPosition() - targetTurretPosition) > 4) {
                 // Wait till the turret is in place
             }*/
@@ -512,7 +587,7 @@ public class ErasmusFreightFrenzy extends BaseRobot // implements Runnable
         targetArmPosition = ARM_TOP ;
         WallFollowToWhite(colorBackupSpeed, -30, 1.5);
         DriveForTime(-10, 0.8, 0, 0.3);
-        targetTurretPosition = 100 ;
+        targetTurretPosition = 97 ;
         Wait(5) ;
         targetArmPosition = 0 ;
         targetTurretPosition = 0 ;
@@ -521,27 +596,31 @@ public class ErasmusFreightFrenzy extends BaseRobot // implements Runnable
     }
 
     public void jerkTestSequence1() {
+        ledSet(LIGHTS.RED) ;
         targetIntakeState = 0 ;
         targetTurretPosition = 0 ;
         targetArmPosition = -35 ;
         Wait(2) ;
-        //targetArmPosition = ARM_TOP ;
-        targetTurretPosition = 100 ;
+        targetTurretPosition = 97 ;
+        targetArmPosition = ARM_TOP ;
         Wait(4) ;
         targetTurretPosition  = 0 ;
-        //targetArmPosition = 0 ;
+        targetArmPosition = 0 ;
+        ledSet(LIGHTS.OFF) ;
     }
 
     public void jerkTestSequence2() {
+        ledSet(LIGHTS.GREEN) ;
         targetIntakeState = 0 ;
         targetTurretPosition = 0 ;
         targetArmPosition = 0 ;
         Wait(2) ;
-        targetArmPosition = -40 ;
+        targetArmPosition = -72 ;
         targetTurretPosition = 0 ;
         Wait(3) ;
         targetTurretPosition  = 0 ;
         targetArmPosition = 0 ;
+        ledSet(LIGHTS.OFF) ;
     }
 
     public void servoMin() {
@@ -593,7 +672,7 @@ public class ErasmusFreightFrenzy extends BaseRobot // implements Runnable
         targetArmPosition = 0 ;
     }
 
-    public void ledSequence() {
+    public void ledSequence1() {
         ledRed.setMode(DigitalChannel.Mode.OUTPUT) ;
         ledGreen.setMode(DigitalChannel.Mode.OUTPUT) ;
         ledGreen.setState(true) ;
@@ -605,6 +684,17 @@ public class ErasmusFreightFrenzy extends BaseRobot // implements Runnable
         ledRed.setMode(DigitalChannel.Mode.INPUT) ;
         ledGreen.setMode(DigitalChannel.Mode.INPUT) ;
     }
+
+    public void ledSequence2() {
+        ledSet(LIGHTS.RED) ;
+        Wait(2) ;
+        ledSet(LIGHTS.GREEN) ;
+        Wait(2 ) ;
+        ledSet(LIGHTS.ORANGE) ;
+        Wait(2 ) ;
+        ledSet(LIGHTS.OFF) ;
+    }
+
 
     public double markTop() {
         //return payload.armGetPosition() ;
@@ -642,7 +732,7 @@ public class ErasmusFreightFrenzy extends BaseRobot // implements Runnable
         while (IsTimeUp(startTime,time)) {
 
             try {
-                Thread.sleep(10);
+                Thread.sleep(20);
             }
             catch (InterruptedException e) {
                 e.printStackTrace();
@@ -706,7 +796,7 @@ public class ErasmusFreightFrenzy extends BaseRobot // implements Runnable
         autoDriveSpeed = speed ;
         while (distSensor.getDistance(DistanceUnit.CM)>distance & IsTimeUp(startTime,time)) {
             try {
-                Thread.sleep(10);
+                Thread.sleep(20);
             }
             catch (InterruptedException e) {
                 e.printStackTrace();
@@ -715,6 +805,70 @@ public class ErasmusFreightFrenzy extends BaseRobot // implements Runnable
         autoDriveSpeed = 0 ;
     }
 
+    public void DriveToWallProportional(double speed, double angle, DistanceSensor distSensor, double distance, double time)  {
+        double startTime = opMode.getRuntime() ;
+        autoDriveHeading = angle ;
+        autoDriveSpeed = speed ;
+        while (distSensor.getDistance(DistanceUnit.CM)>distance & IsTimeUp(startTime,time)) {
+            double error = distance - distSensor.getDistance(DistanceUnit.CM) ;
+            if (error > 30) { this.autoDriveSpeed = speed ; }
+            else { this.autoDriveSpeed = error/30 + 0.2 ; }
+            try {
+                Thread.sleep(20);
+            }
+            catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        autoDriveSpeed = 0 ;
+    }
+
+
+    public void DriveFromWall(double speed, double angle, DistanceSensor distSensor, double distance, double time)  {
+        double startTime = opMode.getRuntime() ;
+        autoDriveHeading = angle ;
+        autoDriveSpeed = speed ;
+        while (distSensor.getDistance(DistanceUnit.CM)<distance & IsTimeUp(startTime, time)) {
+            // Proportional speed adjustment
+            double error = distance - distSensor.getDistance(DistanceUnit.CM) ;
+            this.autoDriveSpeed = error/distance + 0.2 ;
+            try {
+                Thread.sleep(20);
+            }
+            catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        autoDriveSpeed = 0 ;
+    }
+
+    public void ledSet(LIGHTS color) {
+        switch (color) {
+            case RED:
+                ledRed.setMode(DigitalChannel.Mode.OUTPUT) ;
+                ledGreen.setMode(DigitalChannel.Mode.OUTPUT) ;
+                //ledGreen.setState(false) ;
+                ledRed.setState(true) ;
+                break ;
+            case GREEN:
+                ledRed.setMode(DigitalChannel.Mode.OUTPUT) ;
+                ledGreen.setMode(DigitalChannel.Mode.OUTPUT) ;
+                ledGreen.setState(true) ;
+                ledRed.setState(false) ;
+                break ;
+            case ORANGE:
+                ledRed.setMode(DigitalChannel.Mode.OUTPUT) ;
+                ledGreen.setMode(DigitalChannel.Mode.OUTPUT) ;
+                ledGreen.setState(false) ;
+                ledRed.setState(false) ;
+                break ;
+            default:
+                ledRed.setMode(DigitalChannel.Mode.INPUT) ;
+                ledGreen.setMode(DigitalChannel.Mode.INPUT) ;
+                ledGreen.setState(false) ;
+                ledRed.setState(false) ;
+        }
+}
 
 
     public FreightFrenzyNavigator.DuckPos ScanBarcodeOpenCV() throws InterruptedException {

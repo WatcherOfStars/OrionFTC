@@ -52,6 +52,9 @@ public class MecanumChassis
 
     public ChassisProfile profile;
 
+    public static double proportionalThreshold = 50 ;
+    public static double turnOffset = 0.03 ;
+
     //Initializer
     public MecanumChassis(OpMode setOpMode, ChassisProfile setProfile, HermesLog setLog, BaseRobot setBaseRobot)
     {
@@ -169,6 +172,30 @@ public class MecanumChassis
         UpdateEncoderBrakePos();
     }
 
+
+
+
+    public void combinedDrive(ControllerInput controllerInput, double driveSpeed, double turnSpeed, double speedMultiplier, double autoDriveMag, double autoDriveAngle, double targetAngle ) {
+        if ((controllerInput.CalculateLJSMag() < 0.1) && (autoDriveMag == 0)) {
+            // =================  Turning while still ===================
+            // We have to make the in-place turn slower than driving, which is doing other things too. That's why we multiply by 0.6.
+            double turnCorrection = 1.5*turnRate(targetAngle, turnSpeed*speedMultiplier) ;
+            if (turnCorrection == 0) SetMotorSpeeds(0,0,0,0) ;   // no input + no automation = stop
+            else SetMotorSpeeds(turnCorrection, -turnCorrection, turnCorrection, -turnCorrection) ;
+        }
+        else {
+            // ================ Driving and maybe turning ==================
+            // Add the 2 vectors
+            double combinedX = autoDriveMag * Math.sin(Math.toRadians(autoDriveAngle)) + controllerInput.GetLJSX() ;
+            double combinedY = autoDriveMag * Math.cos(Math.toRadians(autoDriveAngle)) + controllerInput.GetLJSY() ;
+            double combinedMag = Math.abs(Math.sqrt(Math.pow(combinedX - 0, 2) + Math.pow(combinedY - 0, 2)));
+            double combinedAngle = Math.toDegrees(Math.atan2(combinedY, combinedX)) - 90 ;
+            if (combinedAngle < 0) { combinedAngle += 360 ; }
+            // Send the drive command based on the combined vectors
+            combinedRawDrive(combinedAngle+inputOffset, combinedMag*driveSpeed*speedMultiplier, targetAngle, turnSpeed*speedMultiplier);//drives at (angle, speed, turnOffset)
+        }
+    }
+
     public void combinedRawDrive(double inputAngle, double speed, double targetAngle, double turnSpeed){
         double finalAngle = inputAngle;
         if(headlessMode) finalAngle += imu.GetRobotAngle();
@@ -190,46 +217,58 @@ public class MecanumChassis
 
         //set the powers of the motors with pid offset applied
         //Gets speeds for the motors
-        double[] speeds = CalculateWheelSpeedsTurning(finalAngle, speed, turnRate(targetAngle)*turnSpeed) ;
+        double[] speeds = CalculateWheelSpeedsTurning(finalAngle, speed, turnRate(targetAngle, turnSpeed) ) ;
         SetMotorSpeeds(speeds[0], -speeds[1], speeds[2], -speeds[3]);
         //Updates brake pos, as this is called continuously as robot is driving
         UpdateEncoderBrakePos();
     }
 
-    public void combinedDrive(ControllerInput controllerInput, double driveSpeed, double turnSpeed, double speedMultiplier, double autoDriveMag, double autoDriveAngle, double targetAngle ) {
-        if ((controllerInput.CalculateLJSMag() < 0.1) && (autoDriveMag == 0)) {
-            // We have to make the in-place turn slower than driving, which doing other things too. That's why we multiply by 0.6.
-            double turnCorrection = 1*turnRate(targetAngle)*speedMultiplier*turnSpeed ;
-            if (turnCorrection == 0) SetMotorSpeeds(0,0,0,0) ;   // no input + no automation = stop
-            else SetMotorSpeeds(turnCorrection, -turnCorrection, turnCorrection, -turnCorrection) ;
-        }
-        else {
-            // Add the 2 vectors
-            double combinedX = autoDriveMag * Math.sin(Math.toRadians(autoDriveAngle)) + controllerInput.GetLJSX() ;
-            double combinedY = autoDriveMag * Math.cos(Math.toRadians(autoDriveAngle)) + controllerInput.GetLJSY() ;
-            double combinedMag = Math.abs(Math.sqrt(Math.pow(combinedX - 0, 2) + Math.pow(combinedY - 0, 2)));
-            double combinedAngle = Math.toDegrees(Math.atan2(combinedY, combinedX)) - 90 ;
-            if (combinedAngle < 0) { combinedAngle += 360 ; }
-            // Send the drive command based on the combined vectors
-            combinedRawDrive(combinedAngle+inputOffset, combinedMag * driveSpeed * speedMultiplier, targetAngle, speedMultiplier*turnSpeed);//drives at (angle, speed, turnOffset)
-        }
-    }
-
-    public double turnRate(double targetAngle) {
+    public double turnRate(double targetAngle, double turnSpeed) {
         double currentAngle = imu.GetRobotAngle();
-        // The bread and butter of this method - get the angle ranges aligned
-        if (targetAngle - currentAngle < -180) targetAngle += 360;
-        else if (targetAngle - currentAngle > 180) targetAngle -= 360;
         double error = targetAngle - currentAngle ;
+        // The bread and butter of this method - get the angle ranges aligned
+        if (error < -180) targetAngle += 360;
+        else if (error > 180) targetAngle -= 360;
+        error = targetAngle - currentAngle ; // Recalculate error
         // Do nothing if we are VERY close.
         if (Math.abs(error) < 3) return 0 ;
         // Do a full turn if we are not close. (-1 or 1)
-        else if (Math.abs(error) > 30) return Math.signum(targetAngle - currentAngle) ;
+        else if (Math.abs(error) > proportionalThreshold) return Math.signum(error)*turnSpeed ;
         // If we're close, do the PID correction. We need to do a little offset to make sure it actually moves.
         else {
-            //return error/30 + Math.signum(error)*0.05 ; // TODO: This is where we speed up our turns
-            return error/30 + Math.signum(error)*0.05 ; // TODO: This is where we speed up our turns
+            //return error/30 + Math.signum(error)*0.05 ;
+            return turnSpeed*error/proportionalThreshold + Math.signum(error)*turnOffset ;
         }
+    }
+
+
+
+    public static double[] CalculateWheelSpeedsTurning(double degrees, double speed, double turnSpeed)
+    {
+        //Returns the speeds the motors need to move at to move. A negative turn speed turns right, a positive left.
+
+        /*Wheel speed is calculated by getting the cosine wave (which we found matches the speed that
+         * the wheels need to go) with a positive 45 or negative 45 shift, depending on the wheel. This works
+         * so that no matter the degrees, it will always come out with the right value. A turn offset is added
+         * to the end for corkscrewing, or turning while driving*/
+        double FRP = -Math.cos(Math.toRadians(degrees + 45)) * speed + turnSpeed;
+        double FLP = Math.cos(Math.toRadians(degrees - 45)) * speed + turnSpeed;
+        double RRP = -Math.cos(Math.toRadians(degrees - 45)) * speed + turnSpeed;
+        double RLP = Math.cos(Math.toRadians(degrees + 45)) * speed + turnSpeed;
+
+        double[] vals = {FRP, FLP, RRP, RLP};
+        return vals;
+    }
+
+
+
+    public double[] getMotorTicks(){
+        double[] returnVal = new double[4]; //I'm sorry (You had better be sorry... - Owen)
+        returnVal[0] = driveMotors.GetMotorPositions()[0];
+        returnVal[1] = driveMotors.GetMotorPositions()[1];
+        returnVal[2] = driveMotors.GetMotorPositions()[2];
+        returnVal[3] = driveMotors.GetMotorPositions()[3];
+        return returnVal;
     }
 
     public void RawDriveTurningTowards(double driveAngle, double speed, double facingAngle, double turnCoefficient){
@@ -321,32 +360,4 @@ public class MecanumChassis
     public void SetDirectionPID(double p, double i, double d){
         directionPID.setPID(p,i,d);
     }
-
-    public static double[] CalculateWheelSpeedsTurning(double degrees, double speed, double turnSpeed)
-    {
-        //Returns the speeds the motors need to move at to move. A negative turn speed turns right, a positive left.
-
-        /*Wheel speed is calculated by getting the cosine wave (which we found matches the speed that
-         * the wheels need to go) with a positive 45 or negative 45 shift, depending on the wheel. This works
-         * so that no matter the degrees, it will always come out with the right value. A turn offset is added
-         * to the end for corkscrewing, or turning while driving*/
-        double FRP = -Math.cos(Math.toRadians(degrees + 45)) * speed + turnSpeed;
-        double FLP = Math.cos(Math.toRadians(degrees - 45)) * speed + turnSpeed;
-        double RRP = -Math.cos(Math.toRadians(degrees - 45)) * speed + turnSpeed;
-        double RLP = Math.cos(Math.toRadians(degrees + 45)) * speed + turnSpeed;
-
-        double[] vals = {FRP, FLP, RRP, RLP};
-        return vals;
-    }
-
-    public double[] getMotorTicks(){
-        double[] returnVal = new double[4]; //I'm sorry (You had better be sorry... - Owen)
-        returnVal[0] = driveMotors.GetMotorPositions()[0];
-        returnVal[1] = driveMotors.GetMotorPositions()[1];
-        returnVal[2] = driveMotors.GetMotorPositions()[2];
-        returnVal[3] = driveMotors.GetMotorPositions()[3];
-        return returnVal;
-    }
-
-
 }

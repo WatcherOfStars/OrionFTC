@@ -142,8 +142,8 @@ public class DcEncoderActuator {
         // ======================= Manual input =======================
         if (!useBrake) {
             //motor.setPower(clamp((Math.signum(error)*manualPower* motorPower),-1,1));
-            motor.setPower(clamp((manualPower* motorPower*error/10),-1,1));
-            motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            motor.setPower(clamp((manualPower* motorPower*error/10),-1,1)) ;
+            motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER) ;
             previousTargetDegrees = targetDegrees ;  // TODO: Need this???
         }
         // ================= If we're close and we're braking (no manual input) ======================
@@ -151,25 +151,18 @@ public class DcEncoderActuator {
             if (!(motor.getMode()==DcMotor.RunMode.RUN_TO_POSITION & motor.getTargetPosition()==(int) (degreesToTicks(targetDegrees)))) {
                 motor.setPower(0) ;
                 try {
-                    Thread.sleep(25);
+                    Thread.sleep(25) ;
                 }
                 catch (InterruptedException e) {
-                    e.printStackTrace();
+                    e.printStackTrace() ;
                 }
                 motor.setTargetPosition((int) (degreesToTicks(targetDegrees))) ;
-                /*if (motor.getTargetPosition()!=degreesToTicks(targetDegrees)) {
-                    motor.setTargetPosition((int) (degreesToTicks(targetDegrees)));
-                }
-                 */
                 motor.setPower(motorPower*encoderPower) ;  // TODO: Try straight power.
                 // motor.setPower(motorPower*encoderPower*error/encoderPoint) ;  // TODO: Try adding P to correction. May smooth the transition.
                 motor.setMode(DcMotor.RunMode.RUN_TO_POSITION) ;
-                //motor.setPower(motorPower) ;
                 //previousTargetDegrees = targetDegrees ;  // TODO: Need this???
             }
-            //motor.setMode(DcMotor.RunMode.RUN_TO_POSITION) ;
-            //else motor.setPower(motorPower*encoderPower*error/encoderPoint) ;  // TODO: Try adding P to correction. May smooth the transition.
-            //else motor.setPower(motorPower*encoderPower) ;  // TODO: Try straight power.
+            // Else, do nothing. We're already set.
         }
         // ================ If not the above, we have to ramp up and down =========================
         else {

@@ -30,14 +30,14 @@ public class ErasmusTeleop extends OpMode implements ControllerInputListener
     ////Variables////
     //Tweaking Vars
     public static double driveSpeed = 1 ; //used to change how fast robot drives
-    public static double turnSpeed = 0.8 ; //used to change how fast robot turns
+    public static double turnSpeed = 0.2 ; //used to change how fast robot turns
 
     public static double turnP = 0.005;  // 0.005
     public static double turnI = 0.0;
     public static double turnD = 0.001;  // 0.01
 
     private double speedMultiplier = 1 ;
-    public static double controllerTurnCoefficient = -2 ;
+    public static double controllerTurnCoefficient = -4 ;
 
     // Temporary for testing
     PIDFCoefficients pidOrig ;
@@ -46,7 +46,7 @@ public class ErasmusTeleop extends OpMode implements ControllerInputListener
 
     @Override
     public void init() {
-        robot = new ErasmusFreightFrenzy(this, true, true, false);  // TODO: This is the bad guy
+        robot = new ErasmusFreightFrenzy(this, true, true, false);
         robot.Init();
 
         controllerInput1 = new ControllerInput(gamepad1, 1);
@@ -84,8 +84,8 @@ public class ErasmusTeleop extends OpMode implements ControllerInputListener
 
     @Override
     public void loop() {
-        controllerInput1.Loop();
-        controllerInput2.Loop();
+        controllerInput1.Loop() ;
+        controllerInput2.Loop() ;
 
         //KILL SWITCH FOR NAVIGATOR
         if(gamepad1.right_trigger > 0.1 && gamepad1.left_trigger > 0.1) {
@@ -120,7 +120,9 @@ public class ErasmusTeleop extends OpMode implements ControllerInputListener
 
         // Manage Robot Driving and Payload
         if (Math.abs(controllerInput1.GetRJSX()) > 0.1) {
-            double newTargetAngle = robot.targetRobotAngle + (controllerInput1.GetRJSX()) * speedMultiplier*controllerTurnCoefficient;
+            double turnStick = controllerInput1.GetRJSX() ;
+            double newTargetAngle = robot.targetRobotAngle + (turnStick * speedMultiplier*controllerTurnCoefficient ) ;
+            //double newTargetAngle = robot.targetRobotAngle + (controllerInput1.GetRJSX()) * speedMultiplier*controllerTurnCoefficient;
             if (newTargetAngle > 180)  newTargetAngle -= 360 ;
             else if (newTargetAngle <= -180)  newTargetAngle += 360 ;
             robot.targetRobotAngle = newTargetAngle ;
@@ -128,11 +130,6 @@ public class ErasmusTeleop extends OpMode implements ControllerInputListener
         robot.updateState(controllerInput1, driveSpeed, turnSpeed, speedMultiplier) ;
 
         //print telemetry
-        if(robot.USE_NAVIGATOR) {
-            //control.GetOrion().PrintVuforiaTelemetry(0);
-            //control.GetOrion().PrintTensorflowTelemetry();
-        }
-
         telemetry.addData("Right Distance= ", robot.rightDistance.getDistance(DistanceUnit.CM) ) ;
         telemetry.addData("Left Distance=  ", robot.leftDistance.getDistance(DistanceUnit.CM) ) ;
         telemetry.addData("Front Distance= ", robot.frontDistance.getDistance(DistanceUnit.CM) ) ;
@@ -141,14 +138,14 @@ public class ErasmusTeleop extends OpMode implements ControllerInputListener
         telemetry.addData("Turret Actual=  ", robot.newTurret.getPosition()) ;
         //telemetry.addData("Turret Error =  ", robot.newTurret.error) ;
         //telemetry.addData("Turret Dist  =  ", robot.newTurret.distance) ;
-        telemetry.addData("Turret Motor =  ", robot.newTurret.motor.getPower()) ;
+        //telemetry.addData("Turret Motor =  ", robot.newTurret.motor.getPower()) ;
         //telemetry.addData("Turret Mode  =  ", robot.newTurret.motor.getMode()) ;
         //telemetry.addData("Arm Target=     ", robot.targetArmPosition) ;
         telemetry.addData("Arm Actual=     ", robot.newArm.getPosition()) ;
         //telemetry.addData("Arm Dist     =  ", robot.newArm.distance) ;
         //telemetry.addData("Arm Error =     ", robot.newArm.error) ;
         telemetry.addData("Color Sensor=   ", robot.colorSensor.alpha()) ;
-        //telemetry.addData("Touch Sensor=   ", robot.intakeTouchSensor.isPressed()) ;
+        telemetry.addData("Touch Sensor=   ", robot.intakeTouchSensor.isPressed()) ;
         //telemetry.addData("Target Angle=   ", robot.targetRobotAngle) ;
         telemetry.addData("Robot Heading=  ", robot.chassis.GetImu().GetRobotAngle()) ;
         telemetry.update();
@@ -302,19 +299,22 @@ public class ErasmusTeleop extends OpMode implements ControllerInputListener
             //Colored buttons
             if(button == Button.A);
             if(button == Button.B) {
-                //Runnable runnable = () -> { robot.testSequence2(); } ;
-                Runnable runnable = () -> { robot.testSequence2(); } ;
+                Runnable runnable = () -> { robot.jerkTestSequence1(); } ;
+                //Runnable runnable = () -> { robot.redAutonomous(); } ;
+                //Runnable runnable = () -> { robot.ledSequence2(); } ;
                 myTestThread = new Thread(runnable) ;
                 myTestThread.start() ;
             }
             if(button == Button.X) {
-                //Runnable runnable = () -> { robot.jerkTestSequence2() ; } ;
-                Runnable runnable = () -> { robot.redSharedHubDeliver(); } ;
+                //Runnable runnable = () -> { robot.jerkTestSequence1() ; } ;
+                Runnable runnable = () -> { robot.testAutonomous(); } ;
+                //Runnable runnable = () -> { robot.redSharedHubDeliver(); } ;
                 myTestThread = new Thread(runnable) ;
                 myTestThread.start() ;
             }
             if(button == Button.Y) {
                 //Runnable runnable = () -> { robot.servoMid(); } ;
+                //Runnable runnable = () -> { robot.ledSequence1(); } ;
                 Runnable runnable = () -> { robot.jerkTestSequence2(); } ;
                 myTestThread = new Thread(runnable) ;
                 myTestThread.start() ;
@@ -327,9 +327,10 @@ public class ErasmusTeleop extends OpMode implements ControllerInputListener
             if(button == Button.RT && robot.USE_PAYLOAD) robot.newArm.useBrake=true ;
             //Dpad
             if(button == Button.DUP) {
-                Runnable runnable = () -> { robot.capSequence(); } ;
-                myTestThread = new Thread(runnable) ;
-                myTestThread.start() ;
+                //Runnable runnable = () -> { robot.capSequence(); } ;
+                //myTestThread = new Thread(runnable) ;
+                //myTestThread.start() ;
+                robot.targetIntakeState = 0 ;
             }
             if(button == Button.DDOWN) {
                 if (myTestThread != null) {
