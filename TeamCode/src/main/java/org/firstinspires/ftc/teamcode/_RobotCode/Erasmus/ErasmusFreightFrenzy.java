@@ -306,9 +306,10 @@ public class ErasmusFreightFrenzy extends BaseRobot // implements Runnable
         newIntake.runIntake(-0.5) ;
         Wait(0.4) ;
         targetTurretPosition = 0 ;
-        targetArmPosition = -33 ;
+        targetArmPosition = 0 ;
+        //targetArmPosition = -33 ;
         targetIntakeState = 0 ;
-        DriveToWallProportional(0.8, 110, rightDistance, 14, 1.5) ;
+        DriveToWallProportional(1, 110, rightDistance, 14, 1.5) ;
         Wait(0.2) ;
         targetArmPosition = 0 ;
         WallFollowToWhite(colorBackupSpeed, 150, 1.0) ;
@@ -810,7 +811,7 @@ public class ErasmusFreightFrenzy extends BaseRobot // implements Runnable
         autoDriveHeading = angle ;
         autoDriveSpeed = speed ;
         while (distSensor.getDistance(DistanceUnit.CM)>distance & IsTimeUp(startTime,time)) {
-            double error = distance - distSensor.getDistance(DistanceUnit.CM) ;
+            double error =  distSensor.getDistance(DistanceUnit.CM)-distance ;
             if (error > 30) { this.autoDriveSpeed = speed ; }
             else { this.autoDriveSpeed = error/30 + 0.2 ; }
             try {
